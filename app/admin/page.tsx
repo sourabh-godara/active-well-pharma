@@ -48,33 +48,25 @@ export default async function AdminDashboard() {
                     title="Total Revenue"
                     value={`$${totalRevenue.toFixed(2)}`}
                     icon={DollarSign}
-                    change="+32.53%"
-                    changeType="positive"
-                    subtext="Since last month"
+
                 />
                 <StatsCard
                     title="Total Orders"
                     value={ordersCount || 0}
                     icon={ShoppingCart}
-                    change="+12.5%"
-                    changeType="positive"
-                    subtext="Since last month"
+
                 />
                 <StatsCard
                     title="Total Products"
                     value={productsCount || 0}
                     icon={Package}
-                    change="0.0%"
-                    changeType="neutral"
-                    subtext="Inventory Status"
+
                 />
                 <StatsCard
                     title="Pending Orders"
                     value={pendingOrders?.length || 0}
                     icon={Users}
-                    change="-5.2%"
-                    changeType="negative"
-                    subtext="Needs Attention"
+
                 />
             </div>
 

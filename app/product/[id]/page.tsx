@@ -69,7 +69,7 @@ export default async function ProductPage({
                     <div className="mt-10 px-4 sm:mt-16 sm:px-0 lg:mt-0">
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900">{product.name}</h1>
                         <div className="mt-3 flex items-center justify-between">
-                            <p className="text-3xl tracking-tight text-gray-900">${product.price}</p>
+                            <p className="text-3xl tracking-tight text-gray-900">₹{product.price}</p>
                             <div className="flex items-center space-x-2">
                                 <StarRating rating={average_rating} readOnly size="md" />
                                 <span className="text-sm text-gray-500">{total_reviews} reviews</span>

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { User } from 'lucide-react'
 import { logout } from '@/app/auth/actions'
 import { useUser } from '@/app/context/user-context'
+import { Button } from './ui/button'
 
 export function UserNav() {
     const { profile, loading } = useUser();
@@ -23,9 +24,9 @@ export function UserNav() {
                     </span>
                 </Link>
                 <form action={logout}>
-                    <button className="text-sm font-medium text-gray-500 hover:text-gray-900">
+                    <Button>
                         Sign out
-                    </button>
+                    </Button>
                 </form>
             </div>
         )
@@ -33,11 +34,15 @@ export function UserNav() {
 
     return (
         <div className="flex items-center gap-4">
-            <Link href="/auth/login" className="text-sm font-semibold leading-6 text-gray-900">
-                Log in
+            <Link href="/auth/login">
+                <Button variant="outline">
+                    Log in
+                </Button>
             </Link>
-            <Link href="/auth/signup" className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                Sign up
+            <Link href="/auth/signup">
+                <Button>
+                    Sign up
+                </Button>
             </Link>
         </div>
     )

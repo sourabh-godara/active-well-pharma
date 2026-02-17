@@ -42,6 +42,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                                 fill
                                 className="object-cover"
                                 sizes="96px"
+                                unoptimized
                             />
                         </button>
                     ))}
@@ -57,6 +58,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                         fill
                         className="object-cover object-center"
                         priority
+                        unoptimized
                         sizes="(max-width: 768px) 100vw, 50vw"
                     />
                 </div>

@@ -12,8 +12,7 @@ export const metadata: Metadata = {
 }
 
 import { CartProvider } from './context/cart-context'
-import { Navbar } from '@/components/navbar'
-import NavbarMobile from '@/components/navbar-mobile'
+import { ConditionalNavbar } from '@/components/conditional-navbar'
 import { UserProvider } from './context/user-context'
 import { ClientErrorBoundary } from '@/components/client-error-boundary'
 
@@ -28,9 +27,8 @@ export default function RootLayout({
         <ClientErrorBoundary>
           <UserProvider>
             <CartProvider>
-              <Navbar />
+              <ConditionalNavbar />
               {children}
-              <NavbarMobile />
               <Toaster position="top-right" />
             </CartProvider>
           </UserProvider>

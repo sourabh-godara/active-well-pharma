@@ -5,10 +5,9 @@ import { useFormStatus } from 'react-dom'
 import { login } from '../actions'
 import { toast } from 'sonner'
 import { useEffect } from 'react'
+import { ActionResponse } from '@/lib/errors'
 
-const initialState = {
-    error: '',
-}
+const initialState: ActionResponse | null = null
 
 function SubmitButton() {
     const { pending } = useFormStatus()
@@ -28,8 +27,9 @@ export default function LoginForm() {
     const [state, formAction] = useActionState(login, initialState)
 
     useEffect(() => {
-        if (state?.error) {
-            toast.error(state.error)
+        // Handle ErrorResponse structure: { success: false, error: { code, message, ... } }
+        if (state && !state.success && state.error) {
+            toast.error(state.error.message || 'An error occurred during login')
         }
     }, [state])
 

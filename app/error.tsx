@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { logError } from '@/lib/errors'
+import { logError } from '@/lib/errors/error-handler.client'
 
 /**
  * Next.js Error Component

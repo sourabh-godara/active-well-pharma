@@ -38,6 +38,12 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
+
+    // Redirect authenticated users away from auth pages
+    if (user && (request.nextUrl.pathname.startsWith('/auth/login') || request.nextUrl.pathname.startsWith('/auth/signup'))) {
+        return NextResponse.redirect(new URL('/', request.url))
+    }
+
     // Protected routes logic
     if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
         return NextResponse.redirect(new URL('/auth/login', request.url))

@@ -8,6 +8,9 @@
  * - Request ID tracking for debugging
  * - Operational error guards
  * - Zod validation integration
+ * 
+ * NOTE: This file exports server-only utilities that use Node.js APIs.
+ * For client components, import from './error-handler.client' instead.
  */
 
 // Error classes
@@ -24,15 +27,18 @@ export {
 // Error codes
 export { ErrorCode, ErrorStatusMap } from './error-codes'
 
-// Error handler
+// Error handler (SERVER-ONLY)
+// These use request context which depends on async_hooks
 export {
     handleError,
-    logError,
     sanitizeError,
     createSuccessResponse,
     type ErrorResponse,
     type SuccessResponse,
 } from './error-handler'
+
+// Server-only error logging that includes request context
+export { logError } from './error-handler'
 
 // Request context
 export {

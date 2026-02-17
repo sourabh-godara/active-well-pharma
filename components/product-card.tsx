@@ -28,6 +28,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 25vw"
+                    unoptimized
                 />
                 <button className="absolute top-3 right-3 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background">
                     <ShoppingBag className="w-4 h-4 text-foreground" />

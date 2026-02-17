@@ -1,7 +1,7 @@
 'use client'
 
 import React, { Component, ErrorInfo, ReactNode } from 'react'
-import { logError } from '@/lib/errors'
+import { logError } from '@/lib/errors/error-handler.client'
 
 interface Props {
     children: ReactNode
@@ -37,6 +37,21 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        // Check if this is a Next.js internal error (redirect or not-found)
+        // These are not actual errors but control flow mechanisms
+        const isNextJsError =
+            error &&
+            typeof error === 'object' &&
+            'digest' in error &&
+            typeof (error as any).digest === 'string' &&
+            ((error as any).digest.startsWith('NEXT_REDIRECT') || (error as any).digest.startsWith('NEXT_NOT_FOUND'))
+
+        // Don't log Next.js internal errors
+        if (isNextJsError) {
+            // Rethrow so Next.js can handle the redirect/not-found
+            throw error
+        }
+
         // Log the error to our error logging system
         console.error('Error Boundary caught an error:', error, errorInfo)
 
