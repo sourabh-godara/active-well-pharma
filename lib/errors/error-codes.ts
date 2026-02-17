@@ -1,0 +1,78 @@
+/**
+ * Error codes for the application
+ * Organized by category for better maintainability
+ */
+export enum ErrorCode {
+  // Validation errors (1000-1999)
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  INVALID_INPUT = 'INVALID_INPUT',
+  MISSING_FIELD = 'MISSING_FIELD',
+  INVALID_FORMAT = 'INVALID_FORMAT',
+  
+  // Database errors (2000-2999)
+  DATABASE_ERROR = 'DATABASE_ERROR',
+  RECORD_NOT_FOUND = 'RECORD_NOT_FOUND',
+  DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
+  CONSTRAINT_VIOLATION = 'CONSTRAINT_VIOLATION',
+  
+  // Authentication errors (3000-3999)
+  AUTHENTICATION_ERROR = 'AUTHENTICATION_ERROR',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+  SESSION_EXPIRED = 'SESSION_EXPIRED',
+  USER_NOT_AUTHENTICATED = 'USER_NOT_AUTHENTICATED',
+  
+  // Authorization errors (3500-3999)
+  AUTHORIZATION_ERROR = 'AUTHORIZATION_ERROR',
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+  ACCESS_DENIED = 'ACCESS_DENIED',
+  
+  // Resource errors (4000-4999)
+  NOT_FOUND = 'NOT_FOUND',
+  RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',
+  ROUTE_NOT_FOUND = 'ROUTE_NOT_FOUND',
+  
+  // Server errors (5000-5999)
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+  INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+  EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR',
+  PAYMENT_ERROR = 'PAYMENT_ERROR',
+}
+
+/**
+ * HTTP status codes mapping
+ */
+export const ErrorStatusMap: Record<ErrorCode, number> = {
+  // Validation - 400
+  [ErrorCode.VALIDATION_ERROR]: 400,
+  [ErrorCode.INVALID_INPUT]: 400,
+  [ErrorCode.MISSING_FIELD]: 400,
+  [ErrorCode.INVALID_FORMAT]: 400,
+  
+  // Database - 500 or 404
+  [ErrorCode.DATABASE_ERROR]: 500,
+  [ErrorCode.RECORD_NOT_FOUND]: 404,
+  [ErrorCode.DUPLICATE_ENTRY]: 409,
+  [ErrorCode.CONSTRAINT_VIOLATION]: 400,
+  
+  // Authentication - 401
+  [ErrorCode.AUTHENTICATION_ERROR]: 401,
+  [ErrorCode.INVALID_CREDENTIALS]: 401,
+  [ErrorCode.SESSION_EXPIRED]: 401,
+  [ErrorCode.USER_NOT_AUTHENTICATED]: 401,
+  
+  // Authorization - 403
+  [ErrorCode.AUTHORIZATION_ERROR]: 403,
+  [ErrorCode.INSUFFICIENT_PERMISSIONS]: 403,
+  [ErrorCode.ACCESS_DENIED]: 403,
+  
+  // Not Found - 404
+  [ErrorCode.NOT_FOUND]: 404,
+  [ErrorCode.RESOURCE_NOT_FOUND]: 404,
+  [ErrorCode.ROUTE_NOT_FOUND]: 404,
+  
+  // Server - 500
+  [ErrorCode.UNKNOWN_ERROR]: 500,
+  [ErrorCode.INTERNAL_SERVER_ERROR]: 500,
+  [ErrorCode.EXTERNAL_SERVICE_ERROR]: 502,
+  [ErrorCode.PAYMENT_ERROR]: 500,
+}

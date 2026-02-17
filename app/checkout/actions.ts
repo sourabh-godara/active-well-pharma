@@ -4,8 +4,15 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { razorpay } from '@/lib/razorpay'
 import { redirect } from 'next/navigation'
+import {
+    handleError,
+    AuthenticationError,
+    DatabaseError,
+    ErrorCode,
+    type ActionResponse,
+} from '@/lib/errors'
 
-export async function createOrder(amount: number) {
+export async function createOrder(amount: number): Promise<ActionResponse> {
     try {
         const options = {
             amount: Math.round(amount * 100), // amount in lowest denomination (paise)
@@ -13,10 +20,21 @@ export async function createOrder(amount: number) {
             receipt: `receipt_${Date.now()}`,
         }
         const order = await razorpay.orders.create(options)
-        return { orderId: order.id, amount: order.amount, currency: order.currency }
+        return {
+            success: true,
+            data: {
+                orderId: order.id,
+                amount: order.amount,
+                currency: order.currency
+            }
+        }
     } catch (error) {
-        console.error('Error creating Razorpay order:', error)
-        throw new Error('Failed to create payment order')
+        return handleError(
+            new DatabaseError(
+                'Failed to create payment order',
+                ErrorCode.PAYMENT_ERROR
+            )
+        )
     }
 }
 
@@ -26,79 +44,90 @@ export async function verifyPayment(
     signature: string,
     cartItems: any[],
     totalAmount: number
-) {
-    const crypto = require('crypto')
-    const generated_signature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
-        .update(orderId + '|' + paymentId)
-        .digest('hex')
+): Promise<ActionResponse> {
+    try {
+        // Verify payment signature
+        const crypto = require('crypto')
+        const generated_signature = crypto
+            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+            .update(orderId + '|' + paymentId)
+            .digest('hex')
 
-    if (generated_signature !== signature) {
-        throw new Error('Payment verification failed')
-    }
-
-    // Payment is valid, create order in DB
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    // Start DB Transaction (Supabase doesn't support explicit transactions in JS client easily without RPC, 
-    // so we will do best effort or use RPC if needed. specific order: Create Order -> Create Items -> Deduct Stock)
-
-    // 1. Create Order
-    const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-            user_id: user.id,
-            total_amount: totalAmount,
-            status: 'confirmed'
-        })
-        .select()
-        .single()
-
-    if (orderError) throw new Error(orderError.message)
-
-    // 2. Create Order Items
-    const orderItemsData = cartItems.map((item: any) => ({
-        order_id: order.id,
-        product_id: item.id,
-        quantity: item.quantity,
-        price_at_purchase: item.price
-    }))
-
-    const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItemsData)
-
-    if (itemsError) throw new Error(itemsError.message)
-
-    // 3. Deduct Stock & Log Inventory
-    for (const item of cartItems) {
-        // Decrement stock
-        // We really should use an RPC for atomic update, but simple update for now using auto-generated inventory_logs triggers or manual
-
-        // Manual update
-        await supabase.from('inventory_logs').insert({
-            product_id: item.id,
-            change_type: 'order_deduction',
-            quantity_changed: -item.quantity
-        })
-
-        // We need to fetch current stock to decrement safely or use `stock_quantity = stock_quantity - X`
-        // Supabase/Postgres supports `stock_quantity = stock_quantity - X` via RPC or raw SQL. 
-        // JS Client: .rpc() is best.
-        // Or fetch-and-update (race condition risk). I'll use fetch-and-update for simplicity in this demo scope.
-
-        const { data: product } = await supabase.from('products').select('stock_quantity').eq('id', item.id).single()
-
-        if (product) {
-            await supabase.from('products').update({
-                stock_quantity: Math.max(0, product.stock_quantity - item.quantity)
-            }).eq('id', item.id)
+        if (generated_signature !== signature) {
+            throw new DatabaseError(
+                'Payment verification failed',
+                ErrorCode.PAYMENT_ERROR
+            )
         }
-    }
 
-    return { success: true, orderId: order.id }
+        // Payment is valid, create order in DB
+        const cookieStore = await cookies()
+        const supabase = createClient(cookieStore)
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            throw new AuthenticationError(
+                'User not authenticated',
+                ErrorCode.USER_NOT_AUTHENTICATED
+            )
+        }
+
+        // 1. Create Order
+        const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .insert({
+                user_id: user.id,
+                total_amount: totalAmount,
+                status: 'confirmed'
+            })
+            .select()
+            .single()
+
+        if (orderError) {
+            throw new DatabaseError(orderError.message, ErrorCode.DATABASE_ERROR)
+        }
+
+        // 2. Create Order Items
+        const orderItemsData = cartItems.map((item: any) => ({
+            order_id: order.id,
+            product_id: item.id,
+            quantity: item.quantity,
+            price_at_purchase: item.price
+        }))
+
+        const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItemsData)
+
+        if (itemsError) {
+            throw new DatabaseError(itemsError.message, ErrorCode.DATABASE_ERROR)
+        }
+
+        // 3. Deduct Stock & Log Inventory
+        for (const item of cartItems) {
+            // Log inventory change
+            await supabase.from('inventory_logs').insert({
+                product_id: item.id,
+                change_type: 'order_deduction',
+                quantity_changed: -item.quantity
+            })
+
+            // Update stock quantity
+            const { data: product } = await supabase
+                .from('products')
+                .select('stock_quantity')
+                .eq('id', item.id)
+                .single()
+
+            if (product) {
+                await supabase.from('products').update({
+                    stock_quantity: Math.max(0, product.stock_quantity - item.quantity)
+                }).eq('id', item.id)
+            }
+        }
+
+        return { success: true, data: { orderId: order.id } }
+    } catch (error) {
+        return handleError(error)
+    }
 }

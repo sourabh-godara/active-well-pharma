@@ -15,6 +15,7 @@ import { CartProvider } from './context/cart-context'
 import { Navbar } from '@/components/navbar'
 import NavbarMobile from '@/components/navbar-mobile'
 import { UserProvider } from './context/user-context'
+import { ClientErrorBoundary } from '@/components/client-error-boundary'
 
 export default function RootLayout({
   children,
@@ -24,14 +25,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <UserProvider>
-          <CartProvider>
-            <Navbar />
-            {children}
-            <NavbarMobile />
-            <Toaster position="top-right" />
-          </CartProvider>
-        </UserProvider>
+        <ClientErrorBoundary>
+          <UserProvider>
+            <CartProvider>
+              <Navbar />
+              {children}
+              <NavbarMobile />
+              <Toaster position="top-right" />
+            </CartProvider>
+          </UserProvider>
+        </ClientErrorBoundary>
       </body>
     </html>
   )

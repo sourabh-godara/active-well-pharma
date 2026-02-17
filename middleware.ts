@@ -1,9 +1,18 @@
 
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/session'
 
 export async function middleware(request: NextRequest) {
-    return await updateSession(request)
+    // Generate unique request ID for tracking
+    const requestId = crypto.randomUUID()
+
+    // Update session (auth check)
+    const response = await updateSession(request)
+
+    // Attach request ID to response headers for client access and logging
+    response.headers.set('x-request-id', requestId)
+
+    return response
 }
 
 export const config = {
