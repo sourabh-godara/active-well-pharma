@@ -23,11 +23,9 @@ export function UserNav() {
                         {profile.full_name || profile.email?.split('@')[0] || 'Account'}
                     </span>
                 </Link>
-                <form action={logout}>
-                    <Button>
-                        Sign out
-                    </Button>
-                </form>
+                <Button onClick={() => logout()}>
+                    Sign out
+                </Button>
             </div>
         )
     }

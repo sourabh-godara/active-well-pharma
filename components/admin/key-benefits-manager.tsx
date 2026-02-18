@@ -110,14 +110,15 @@ export function KeyBenefitsManager({ productId, initialBenefits = [], onChange }
             order_index: index
         }))
 
-        const result = await reorderBenefits(productId, updates)
-
-        if (result.error) {
-            toast.error('Reorder failed')
-            // Optionally revert, but complex to track previous state specifically for local drag
-        } else {
-            toast.success('Order updated')
+        if (productId) {
+            const result = await reorderBenefits(productId, updates)
+            if (result.error) {
+                toast.error('Reorder failed')
+            } else {
+                toast.success('Order updated')
+            }
         }
+
     }
 
     return (

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 import { CartProvider } from './context/cart-context'
 import { ConditionalNavbar } from '@/components/conditional-navbar'
 import { UserProvider } from './context/user-context'
-import { ClientErrorBoundary } from '@/components/client-error-boundary'
+import { ClientErrorBoundary } from '@/components/error-boundaries'
 
 export default function RootLayout({
   children,

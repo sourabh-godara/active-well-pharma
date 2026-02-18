@@ -6,9 +6,11 @@ import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { KeyBenefitsManager } from '@/components/admin/key-benefits-manager'
 import { ProductBenefit } from '@/types'
+import { type ActionResponse } from '@/lib/errors'
 
-const initialState = {
-    error: '',
+const initialState: ActionResponse = {
+    success: true,
+    message: 'INITIAL_STATE'
 }
 
 function SubmitButton() {
@@ -29,8 +31,10 @@ export default function ProductForm() {
     const [benefits, setBenefits] = useState<ProductBenefit[]>([])
 
     useEffect(() => {
-        if (state?.error) {
-            toast.error(state.error)
+        if (state === initialState) return
+
+        if (!state.success) {
+            toast.error(state.error.message)
         }
     }, [state])
 

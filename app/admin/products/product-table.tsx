@@ -47,7 +47,7 @@ export default function ProductTable({ products }: { products: any[] }) {
                             {product.name}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            ${product.price}
+                            ₹{product.price}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                             {product.stock_quantity}

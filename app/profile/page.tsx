@@ -46,11 +46,13 @@ const ProfilePage = () => {
                                 <Package className="w-4 h-4" /> My Orders
                             </Button>
                         </Link>
-                        <form action={logout}>
-                            <Button variant="ghost" className="rounded-full font-body text-sm gap-2 text-secondary hover:text-secondary">
-                                <LogOut className="w-4 h-4" /> Logout
-                            </Button>
-                        </form>
+                        <Button
+                            variant="ghost"
+                            className="rounded-full font-body text-sm gap-2 text-secondary hover:text-secondary"
+                            onClick={() => logout()}
+                        >
+                            <LogOut className="w-4 h-4" /> Logout
+                        </Button>
                     </div>
                 </div>
 
@@ -88,8 +90,7 @@ const ProfilePage = () => {
                                     {[
                                         { label: "Full Name", value: profile.full_name || 'N/A' },
                                         { label: "Email", value: profile.email || 'N/A' },
-                                        // { label: "Phone", value: "+91 98765 43210" },
-                                        // { label: "Date of Birth", value: "March 15, 1995" },
+                                        { label: "Phone", value: "+91 98765 43210" },
                                         { label: "Role", value: profile.role || 'User' },
 
                                     ].map((field) => (

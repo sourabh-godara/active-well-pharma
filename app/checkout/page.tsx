@@ -22,7 +22,15 @@ export default function CheckoutForm() {
         setIsProcessing(true)
         try {
             // 1. Create Order on Server
-            const { orderId, amount, currency } = await createOrder(total)
+            const response = await createOrder(total)
+
+            if (!response.success || !response.data) {
+                toast.error(response.success ? 'Failed to create order: No data received' : response.error.message)
+                setIsProcessing(false)
+                return
+            }
+
+            const { orderId, amount, currency } = response.data
 
             // 2. Open Razorpay
             const options = {
@@ -47,6 +55,8 @@ export default function CheckoutForm() {
                             clearCart()
                             toast.success('Order placed successfully!')
                             router.push('/dashboard')
+                        } else {
+                            toast.error(result.error.message)
                         }
                     } catch (error) {
                         toast.error('Payment verification failed')

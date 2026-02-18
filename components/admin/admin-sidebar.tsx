@@ -53,15 +53,14 @@ export function AdminSidebar() {
                         </ul>
                     </li>
                     <li className="mt-auto">
-                        <form action={logout}>
-                            <button
-                                type="submit"
-                                className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 w-full transition-colors duration-200"
-                            >
-                                <LogOut className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-red-600 transition-colors duration-200" aria-hidden="true" />
-                                Sign out
-                            </button>
-                        </form>
+                        <button
+                            type="button"
+                            onClick={() => logout()}
+                            className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 w-full transition-colors duration-200"
+                        >
+                            <LogOut className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-red-600 transition-colors duration-200" aria-hidden="true" />
+                            Sign out
+                        </button>
                     </li>
                 </ul>
             </nav>

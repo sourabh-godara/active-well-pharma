@@ -87,7 +87,7 @@ export async function signup(prevState: any, formData: FormData): Promise<Action
     }
 }
 
-export async function logout(): Promise<ActionResponse> {
+export async function logout(formData?: FormData): Promise<ActionResponse> {
     try {
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)

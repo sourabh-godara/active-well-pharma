@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ErrorBoundary } from '@/components/error-boundary'
-import { MinimalErrorFallback } from '@/components/error-fallback'
+import { ErrorBoundary, MinimalErrorFallback } from '@/components/error-boundaries'
 
 function BuggyComponent() {
     const [shouldThrow, setShouldThrow] = useState(false)

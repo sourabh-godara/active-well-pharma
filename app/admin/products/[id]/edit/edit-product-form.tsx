@@ -8,10 +8,11 @@ import { ProductWithGallery } from '@/types'
 import { ProductGalleryManager } from '@/components/admin/product-gallery-manager'
 import { KeyBenefitsManager } from '@/components/admin/key-benefits-manager'
 import Image from 'next/image'
+import { type ActionResponse } from '@/lib/errors'
 
-const initialState = {
-    error: '',
-    success: false
+const initialState: ActionResponse = {
+    success: true,
+    message: 'INITIAL_STATE'
 }
 
 function SubmitButton() {
@@ -31,9 +32,11 @@ export default function EditProductForm({ product }: { product: ProductWithGalle
     const [state, formAction] = useActionState(updateProduct, initialState)
 
     useEffect(() => {
-        if (state?.error) {
-            toast.error(state.error)
-        } else if (state?.success) {
+        if (state === initialState) return
+
+        if (!state.success) {
+            toast.error(state.error.message)
+        } else if (state.success) {
             toast.success('Product updated successfully')
         }
     }, [state])

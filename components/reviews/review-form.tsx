@@ -33,7 +33,7 @@ export function ReviewForm({ productId, existingReview, onSuccess, onCancel }: R
         watch,
         formState: { errors },
     } = useForm<ReviewFormValues>({
-        resolver: zodResolver(isEditing ? updateReviewSchema.omit({ reviewId: true }) : insertReviewSchema.omit({ productId: true })),
+        resolver: zodResolver(isEditing ? updateReviewSchema.omit({ reviewId: true }) : insertReviewSchema.omit({ productId: true })) as any,
         defaultValues: {
             rating: existingReview?.rating || 0,
             comment: existingReview?.comment || '',
