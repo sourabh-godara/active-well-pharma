@@ -40,13 +40,12 @@ const Hero = () => {
 
                 {/* Hero image */}
                 <div className="flex-1 relative animate-scale-in">
-                    <div className="relative rounded-3xl overflow-hidden shadow-hover">
+                    <div className="relative rounded-3xl overflow-hidden shadow-hover aspect-square min-h-[400px] lg:min-h-[500px]">
                         <Image
-                            src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2850&q=80"
+                            src="/hero.jpg"
                             alt="Colorful superfoods and wellness products"
-                            className="object-cover w-"
+                            className="object-cover"
                             fill
-
                             loading="eager"
                         />
                     </div>

@@ -21,7 +21,7 @@ export default async function Home() {
       <Hero />
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-baseline justify-between border-b border-gray-200 pb-6 pt-10">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">New Arrivals</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Our Products</h1>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">

@@ -34,7 +34,7 @@ const ProfilePage = () => {
                     </div>
                     <div className="text-center sm:text-left">
                         <h1 className="font-display text-2xl font-bold text-foreground">{profile.full_name || 'User'}</h1>
-                        <p className="font-body text-sm text-muted-foreground">Member since {new Date(profile.created_at).toLocaleDateString()} · 🌿 Gold Tier</p>
+                        <p className="font-body text-sm text-muted-foreground">Member since {new Date(profile.created_at).toLocaleDateString()}</p>
                         <div className="flex items-center gap-4 mt-2 justify-center sm:justify-start">
                             <span className="font-body text-xs text-muted-foreground flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {profile.email}</span>
                             {/* <span className="font-body text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> +91 98765 43210</span> */}
@@ -91,7 +91,7 @@ const ProfilePage = () => {
                                         // { label: "Phone", value: "+91 98765 43210" },
                                         // { label: "Date of Birth", value: "March 15, 1995" },
                                         { label: "Role", value: profile.role || 'User' },
-                                        { label: "Loyalty Tier", value: "🌿 Gold Member" },
+
                                     ].map((field) => (
                                         <div key={field.label}>
                                             <p className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1">{field.label}</p>
