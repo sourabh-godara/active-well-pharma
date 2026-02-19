@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/types'
+import { User } from '@supabase/supabase-js'
 
 // Create client once outside the component to prevent recreation
 const supabase = createClient()
@@ -10,10 +11,33 @@ const supabase = createClient()
 // Global flag to prevent concurrent profile fetches across all instances
 let globalIsFetching = false
 
-export function useProfile() {
-    const [profile, setProfile] = useState<Profile | null>(null)
-    const [loading, setLoading] = useState(true)
+// ... existing code ...
+
+export function useProfile(initialUser: User | null = null, initialProfile: Profile | null = null) {
+    const [profile, setProfile] = useState<Profile | null>(initialProfile)
+    // If we have initial data, we are not loading. If we have initialUser but no profile, we might be loading? 
+    // Actually if initialUser is null, we are not loading (not logged in).
+    // If initialUser is present but initialProfile is null (maybe failed to fetch?), we might try to fetch again? 
+    // But for now, let's assume if initialProfile is passed, we are good.
+    const [loading, setLoading] = useState(
+        // We are loading if we don't have a profile AND we don't know for sure we are logged out (initialUser explicitly null)
+        // Check: if initialUser is null, we are not loading. If initialProfile is set, we are not loading.
+        // If initialUser is undefined (prop missing), default is null.
+        // So:
+        !initialProfile && initialUser !== null
+    )
     const [error, setError] = useState<string | null>(null)
+
+    // Sync state with props when they change
+    useEffect(() => {
+        if (initialProfile) {
+            setProfile(initialProfile)
+            setLoading(false)
+        } else if (initialUser === null) {
+            setProfile(null)
+            setLoading(false)
+        }
+    }, [initialProfile, initialUser])
 
     useEffect(() => {
         let mounted = true
@@ -84,8 +108,10 @@ export function useProfile() {
             }
         }
 
-        // Initial profile load on mount
-        getProfile()
+        // Initial profile load on mount - SKIP if we have initialProfile
+        if (!initialProfile) {
+            getProfile()
+        }
 
         // Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -109,7 +135,7 @@ export function useProfile() {
             mounted = false
             subscription.unsubscribe()
         }
-    }, [])
+    }, [initialProfile]) // Re-run if initialProfile changes? No, we handle prop sync in separate effect. But here we use it for checking if we should run getProfile.
 
     return { profile, loading, error }
 }

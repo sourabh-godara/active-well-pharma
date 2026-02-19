@@ -11,21 +11,39 @@ export const metadata: Metadata = {
   description: 'Your trusted online store',
 }
 
+import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
+
 import { CartProvider } from './context/cart-context'
 import { ConditionalNavbar } from '@/components/conditional-navbar'
 import { UserProvider } from './context/user-context'
 import { ClientErrorBoundary } from '@/components/error-boundaries'
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let profile = null
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+    profile = data
+  }
+
   return (
     <html lang="en">
       <body className={inter.className}>
         <ClientErrorBoundary>
-          <UserProvider>
+          <UserProvider initialUser={user} initialProfile={profile}>
             <CartProvider>
               <ConditionalNavbar />
               {children}

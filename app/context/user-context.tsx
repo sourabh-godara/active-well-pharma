@@ -14,8 +14,16 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
-export function UserProvider({ children }: { children: React.ReactNode }) {
-    const { profile, loading, error } = useProfile()
+export function UserProvider({
+    children,
+    initialUser = null,
+    initialProfile = null
+}: {
+    children: React.ReactNode
+    initialUser?: any
+    initialProfile?: any
+}) {
+    const { profile, loading, error } = useProfile(initialUser, initialProfile)
 
     const isAuthenticated = !!profile
     const isAdmin = profile?.role === 'admin'
