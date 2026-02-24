@@ -1,6 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Instagram, Facebook, Twitter, Youtube } from "lucide-react";
+import Link from "next/link";
 
+const SocialMedia = [
+    { name: "Instagram", href: "https://www.instagram.com/activewellpharma/", icon: Instagram },
+    { name: "Facebook", href: "#", icon: Facebook },
+    { name: "Twitter", href: "#", icon: Twitter },
+    { name: "Youtube", href: "#", icon: Youtube },
+]
 const Footer = () => {
     return (
         <footer className="bg-foreground text-background">
@@ -64,15 +71,13 @@ const Footer = () => {
                     <div>
                         <h3 className="font-display text-lg font-semibold mb-4">Connect</h3>
                         <div className="flex gap-3 mb-6">
-                            {[Instagram, Facebook, Twitter, Youtube].map((Icon, i) => (
-                                <a key={i} href="#" className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center hover:bg-background/20 transition-colors">
-                                    <Icon className="w-5 h-5" />
-                                </a>
+                            {SocialMedia.map((item, i) => (
+                                <Link key={i} target="_blank" href={item.href} className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center hover:bg-background/20 transition-colors">
+                                    <item.icon className="w-5 h-5" />
+                                </Link>
                             ))}
                         </div>
-                        <p className="font-body text-sm text-background/60">
-                            Download our app for exclusive offers
-                        </p>
+
                     </div>
                 </div>
 
@@ -81,7 +86,7 @@ const Footer = () => {
                         ActiveWell<span className="text-secondary">Pharma</span>
                     </a>
                     <p className="font-body text-xs text-background/40">
-                        © 2026 e-store. All rights reserved. Plant-powered beauty for everyone.
+                        © 2026 ActiveWell Pharma. All rights reserved.
                     </p>
                 </div>
             </div>

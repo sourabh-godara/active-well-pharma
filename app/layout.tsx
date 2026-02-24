@@ -7,8 +7,8 @@ import { Toaster } from 'sonner'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'E-Store',
-  description: 'Your trusted online store',
+  title: 'ActiveWell Pharma',
+  description: 'Activewell Pharma delivers innovative, easy-to-use nutraceutical solutions that support immunity, energy, and everyday wellness.',
 }
 
 import { cookies } from 'next/headers'
