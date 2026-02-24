@@ -1,6 +1,6 @@
+'use client'
 import { useState } from "react";
 import { Menu, X, ShoppingBag, Search, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { UserNav } from "./user-nav";
 import Link from "next/link";
 
