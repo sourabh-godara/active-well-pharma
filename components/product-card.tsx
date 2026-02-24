@@ -40,7 +40,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {/* Info */}
             <div className="p-4">
                 <p className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1">{'SKIN GLOW'}</p>
-                <h3 className="font-display text-sm sm:text-base font-semibold text-foreground mb-2 line-clamp-1">{product.name}</h3>
+                <h3 className="font-display text-sm sm:text-base font-mono font-semibold text-foreground mb-2 line-clamp-1">{product.name}</h3>
                 <div className="flex items-center gap-1.5 mb-3">
                     <div className="flex items-center gap-0.5">
                         <Star color='orange' fill='orange' className="w-3.5 h-3.5 text-sunshine" />

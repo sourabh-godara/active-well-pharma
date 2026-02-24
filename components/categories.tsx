@@ -63,7 +63,7 @@ const Categories = () => {
                             </div>
 
                             {/* Title */}
-                            <h3 className="font-display text-base font-bold text-gray-900 mb-1">
+                            <h3 className="font-display text-base font-mono font-semibold text-gray-900 mb-1">
                                 {cat.title}
                             </h3>
 

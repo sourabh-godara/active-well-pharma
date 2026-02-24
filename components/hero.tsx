@@ -10,10 +10,8 @@ const Hero = () => {
                     <span className="inline-block font-body text-sm font-semibold text-secondary tracking-widest uppercase mb-4 animate-fade-up">
                         Plant-Based Beauty
                     </span>
-                    <h1 className="font-display text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-                        Glow From
-                        <br />
-                        <span className="text-white">Within</span> ✨
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-white leading-tight text-balance">
+                        Pure Wellness, <span className="text-green-500">Naturally</span> Powerful
                     </h1>
                     <p className="font-body text-lg text-white max-w-md mx-auto lg:mx-0 mb-8 animate-fade-up" style={{ animationDelay: "0.2s" }}>
                         Discover plant-powered supplements for radiant skin, luscious hair, and total wellness. 100% natural, 100% effective.
@@ -30,20 +28,21 @@ const Hero = () => {
                     {/* Trust badges */}
                     <div className="flex items-center gap-6 mt-10 justify-center lg:justify-start animate-fade-up" style={{ animationDelay: "0.4s" }}>
                         {["100% Vegan", "Clinically Tested", "No Chemicals"].map((badge) => (
-                            <span key={badge} className="font-body text-xs font-medium text-white bg-background/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border">
-                                ✅ {badge}
-                            </span>
+                            <div key={badge} className="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                                <span className="text-accent font-serif">✓</span>
+                                <span className="text-sm text-white font-medium">{badge}</span>
+                            </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Hero image */}
-                <div className="flex-1 relative animate-scale-in">
-                    <div className="relative rounded-3xl overflow-hidden shadow-hover aspect-square min-h-[400px] lg:min-h-[500px]">
+                <div className="flex-1 relative">
+                    <div className="relative overflow-hidden aspect-square min-h-[550px] lg:min-h-[650px]">
                         <Image
-                            src="/hero.jpg"
+                            src="/hero01.png"
                             alt="Colorful superfoods and wellness products"
-                            className="object-cover"
+                            className="object-cover shadow-sm"
                             fill
                             loading="eager"
                         />
