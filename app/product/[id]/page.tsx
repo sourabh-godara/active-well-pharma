@@ -11,7 +11,8 @@ import { StarRating } from '@/components/reviews/star-rating'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { ImageGallery } from '@/components/product/image-gallery'
-import { ProductBenefits } from '@/components/product/product-benefits'
+import { ProductInfo } from '@/components/product/product-info'
+import { ProductTabs } from '@/components/product/product-tabs'
 
 export const revalidate = 120 // Revalidate every 120 seconds
 
@@ -66,46 +67,18 @@ export default async function ProductPage({
                     </div>
 
                     {/* Product Info */}
-                    <div className="mt-10 px-4 sm:mt-16 sm:px-0 lg:mt-0">
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">{product.name}</h1>
-                        <div className="mt-3 flex items-center justify-between">
-                            <p className="text-3xl tracking-tight text-gray-900">₹{product.price}</p>
-                            <div className="flex items-center space-x-2">
-                                <StarRating rating={average_rating} readOnly size="md" />
-                                <span className="text-sm text-gray-500">{total_reviews} reviews</span>
-                            </div>
-                        </div>
-
-                        <div className="mt-6">
-                            <h3 className="sr-only">Description</h3>
-                            <div className="space-y-6 text-base text-gray-700">
-                                <p>{product.description}</p>
-                            </div>
-                        </div>
-
-                        <div className="mt-6">
-                            <div className="flex items-center">
-                                <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${product.stock_quantity > 0 ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-red-50 text-red-700 ring-red-600/20'}`}>
-                                    {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
-                                </span>
-                                <span className="ml-2 text-sm text-gray-500">
-                                    {product.stock_quantity} available
-                                </span>
-                            </div>
-                        </div>
-
-                        <ProductBenefits benefits={product.benefits || []} />
-
-                        <div className="mt-10 flex">
-                            <AddToCartButton product={product} />
-                        </div>
-                    </div>
+                    <ProductInfo
+                        product={product}
+                        averageRating={average_rating}
+                        totalReviews={total_reviews}
+                    />
                 </div>
 
-                {/* Reviews Section */}
-                <div className="mt-16 border-t border-gray-200 pt-16">
-                    <h2 className="text-2xl font-bold tracking-tight text-gray-900">Customer Reviews</h2>
-
+                {/* Tabs Section */}
+                <ProductTabs
+                    description={product.description}
+                    ingredients="" // We can add ingredients field to DB later
+                >
                     <div className="mt-8 lg:grid lg:grid-cols-12 lg:gap-x-8">
                         <div className="lg:col-span-4">
                             {/* Rating Summary Breakdown could go here */}
@@ -151,7 +124,7 @@ export default async function ProductPage({
                             />
                         </div>
                     </div>
-                </div>
+                </ProductTabs>
             </div>
         </div>
     )

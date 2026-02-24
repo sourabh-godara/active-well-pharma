@@ -17,15 +17,15 @@ export function UserNav() {
     if (profile) {
         return (
             <div className="flex items-center gap-4">
-                <Link href="/profile" className="text-gray-500 hover:text-gray-900 flex items-center gap-1">
+                <Link href="/profile" className=" hover:text-primary text-foreground/70 flex items-center gap-1">
                     <User className="h-6 w-6" />
-                    <span className="text-sm font-medium">
+                    <span className="text-sm  font-medium">
                         {profile.full_name || profile.email?.split('@')[0] || 'Account'}
                     </span>
                 </Link>
-                <Button onClick={() => logout()}>
+                {/* <Button onClick={() => logout()}>
                     Sign out
-                </Button>
+                </Button> */}
             </div>
         )
     }

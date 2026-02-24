@@ -1,22 +1,21 @@
 import { Button } from "@/components/ui/button";
-import heroBanner from "@/assets/hero-banner.jpg";
 import Image from "next/image";
 
 const Hero = () => {
     return (
-        <section className="relative overflow-hidden bg-gradient-hero">
+        <section className="relative overflow-hidden bg-primary">
             <div className="container-brand section-padding flex flex-col lg:flex-row items-center gap-12">
                 {/* Text content */}
                 <div className="flex-1 text-center lg:text-left z-10">
                     <span className="inline-block font-body text-sm font-semibold text-secondary tracking-widest uppercase mb-4 animate-fade-up">
                         Plant-Based Beauty
                     </span>
-                    <h1 className="font-display text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground leading-tight mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+                    <h1 className="font-display text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
                         Glow From
                         <br />
-                        <span className="text-gradient-fresh">Within</span> ✨
+                        <span className="text-white">Within</span> ✨
                     </h1>
-                    <p className="font-body text-lg text-muted-foreground max-w-md mx-auto lg:mx-0 mb-8 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+                    <p className="font-body text-lg text-white max-w-md mx-auto lg:mx-0 mb-8 animate-fade-up" style={{ animationDelay: "0.2s" }}>
                         Discover plant-powered supplements for radiant skin, luscious hair, and total wellness. 100% natural, 100% effective.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-up" style={{ animationDelay: "0.3s" }}>
@@ -31,7 +30,7 @@ const Hero = () => {
                     {/* Trust badges */}
                     <div className="flex items-center gap-6 mt-10 justify-center lg:justify-start animate-fade-up" style={{ animationDelay: "0.4s" }}>
                         {["100% Vegan", "Clinically Tested", "No Chemicals"].map((badge) => (
-                            <span key={badge} className="font-body text-xs font-medium text-muted-foreground bg-background/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border">
+                            <span key={badge} className="font-body text-xs font-medium text-white bg-background/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border">
                                 ✅ {badge}
                             </span>
                         ))}

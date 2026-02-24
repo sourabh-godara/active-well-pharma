@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { StarRating } from '@/components/reviews/star-rating'
 import { Product } from '@/types'
 import { ShoppingBag, Star } from 'lucide-react'
+import { Button } from './ui/button'
 
 interface ProductWithRating extends Product {
     average_rating: number
@@ -30,9 +31,10 @@ export function ProductCard({ product }: ProductCardProps) {
                     sizes="(max-width: 768px) 100vw, 25vw"
                     unoptimized
                 />
-                <button className="absolute top-3 right-3 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background">
+
+                <Button className="absolute top-3 right-3 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background">
                     <ShoppingBag className="w-4 h-4 text-foreground" />
-                </button>
+                </Button>
             </div>
 
             {/* Info */}
@@ -41,7 +43,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 <h3 className="font-display text-sm sm:text-base font-semibold text-foreground mb-2 line-clamp-1">{product.name}</h3>
                 <div className="flex items-center gap-1.5 mb-3">
                     <div className="flex items-center gap-0.5">
-                        <Star className="w-3.5 h-3.5 fill-sunshine text-sunshine" />
+                        <Star color='orange' fill='orange' className="w-3.5 h-3.5 text-sunshine" />
                         <span className="font-body text-xs font-semibold text-foreground">{product.average_rating}</span>
                     </div>
                     <span className="font-body text-xs text-muted-foreground">({product.total_reviews})</span>

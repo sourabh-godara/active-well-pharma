@@ -78,7 +78,7 @@ const Footer = () => {
 
                 <div className="border-t border-background/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <a href="/" className="font-display text-2xl font-bold">
-                        Plix<span className="text-secondary">Life</span>
+                        ActiveWell<span className="text-secondary">Pharma</span>
                     </a>
                     <p className="font-body text-xs text-background/40">
                         © 2026 e-store. All rights reserved. Plant-powered beauty for everyone.
