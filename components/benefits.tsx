@@ -29,7 +29,7 @@ const Benefits = () => {
             <div className="container-brand">
                 <div className="text-center mb-14">
                     <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
-                        Why Choose <span className="text-gradient-coral">PlixLife</span>?
+                        Why Choose <span className="text-gradient-coral">ActiveWell</span>?
                     </h2>
                     <p className="font-body text-muted-foreground max-w-lg mx-auto">
                         We're on a mission to make clean beauty accessible to everyone
