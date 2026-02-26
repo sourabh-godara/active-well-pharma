@@ -5,7 +5,7 @@ import { UserNav } from "./user-nav";
 import Link from "next/link";
 
 const navLinks = [
-    { label: "Shop", href: "#" },
+    { label: "Shop", href: "/shop" },
     { label: "Skin", href: "#" },
     { label: "Hair", href: "#" },
 ];

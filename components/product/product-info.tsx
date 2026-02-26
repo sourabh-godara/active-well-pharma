@@ -6,77 +6,105 @@ import { ProductBenefits } from './product-benefits'
 import { AddToCartButton } from '@/components/add-to-cart-button'
 import { BuyNowButton } from './buy-now-button'
 import { TrustBadges } from './trust-badges'
+import { Button } from '@/components/ui/button'
 import { Minus, Plus } from 'lucide-react'
+import { ProductWithGallery } from '@/types'
 
-export function ProductInfo({ product, averageRating, totalReviews }: { product: any, averageRating: number, totalReviews: number }) {
+interface ProductInfoProps {
+    product: ProductWithGallery
+    averageRating: number
+    totalReviews: number
+}
+
+export function ProductInfo({ product, averageRating, totalReviews }: ProductInfoProps) {
     const [quantity, setQuantity] = useState(1)
 
-    const increment = () => setQuantity(prev => prev + 1)
+    const increment = () => setQuantity(prev => Math.min(prev + 1, product.stock_quantity))
     const decrement = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1))
 
-    const originalPrice = Math.round(product.price * 1.25) // Fake original price for demo (20% off roughly)
+    const originalPrice = Math.round(product.price * 1.25)
     const savings = originalPrice - product.price
 
     return (
-        <div className="mt-10 px-4 sm:mt-16 sm:px-0 lg:mt-0 font-sans">
-            {/* Category / Badge */}
-            <div className="mb-4">
-                <span className="text-xs font-bold tracking-wider text-red-500 uppercase">SKIN GLOW</span>
-            </div>
+        <div className="flex flex-col gap-5 font-body">
 
-            <h1 className="text-4xl font-serif font-bold tracking-tight text-gray-900 mb-4">{product.name}</h1>
+            {/* Product Name */}
+            <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-foreground leading-tight">
+                {product.name}
+            </h1>
 
-            <div className="flex items-center space-x-2 mb-6">
-                <StarRating rating={averageRating} readOnly size="sm" />
-                <span className="text-sm font-medium text-gray-900">{averageRating}</span>
-                <span className="text-sm text-gray-500">({totalReviews} reviews)</span>
-            </div>
+            {/* Rating */}
+            {totalReviews > 0 && (
+                <div className="flex items-center gap-2">
+                    <StarRating rating={averageRating} readOnly size="sm" />
+                    <span className="text-sm font-semibold text-foreground">{averageRating}</span>
+                    <span className="text-sm text-muted-foreground">({totalReviews} reviews)</span>
+                </div>
+            )}
 
-            <div className="flex items-baseline space-x-4 mb-6">
-                <p className="text-3xl font-bold text-gray-900">₹{product.price.toLocaleString()}</p>
-                <p className="text-lg text-gray-500 line-through">₹{originalPrice.toLocaleString()}</p>
-                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+            {/* Divider */}
+            <div className="h-px bg-border" />
+
+            {/* Price */}
+            <div className="flex items-baseline gap-3 flex-wrap">
+                <p className="text-3xl font-bold text-foreground">₹{product.price.toLocaleString()}</p>
+                <p className="text-base text-muted-foreground line-through">₹{originalPrice.toLocaleString()}</p>
+                <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
                     Save ₹{savings.toLocaleString()}
                 </span>
             </div>
 
-            {/* Benefits */}
-            <ProductBenefits benefits={product.benefits || []} />
+            {/* Dynamic Key Benefits from DB */}
+            <ProductBenefits benefits={product.benefits ?? []} />
 
-            <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-                <div className="h-4 w-4 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                </div>
-                <span>100% plant-based ingredients</span>
-            </div>
+            {/* Stock */}
+            {product.stock_quantity > 0 ? (
+                <p className="text-sm text-green-600 font-medium">
+                    ✓ In stock ({product.stock_quantity} available)
+                </p>
+            ) : (
+                <p className="text-sm text-destructive font-medium">Out of stock</p>
+            )}
 
-
-            {/* Quantity and Actions */}
-            <div className="mt-8 space-y-4">
-                <div className="flex items-center rounded-md border border-gray-300 w-max">
-                    <button
+            {/* Quantity + Add to Cart row */}
+            <div className="flex items-center gap-3">
+                {/* Quantity stepper */}
+                <div className="flex items-center rounded-full border border-border bg-background shadow-sm h-12">
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={decrement}
-                        className="p-3 text-gray-600 hover:text-gray-900 focus:outline-none"
                         disabled={quantity <= 1}
+                        className="h-12 w-12 rounded-full text-muted-foreground hover:text-foreground"
+                        aria-label="Decrease"
                     >
                         <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-8 text-center text-gray-900 font-medium">{quantity}</span>
-                    <button
+                    </Button>
+                    <span className="w-8 text-center font-semibold text-foreground text-sm select-none">
+                        {quantity}
+                    </span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={increment}
-                        className="p-3 text-gray-600 hover:text-gray-900 focus:outline-none"
-                        disabled={quantity >= product.stock_quantity}
+                        disabled={quantity >= product.stock_quantity || product.stock_quantity === 0}
+                        className="h-12 w-12 rounded-full text-muted-foreground hover:text-foreground"
+                        aria-label="Increase"
                     >
                         <Plus className="h-4 w-4" />
-                    </button>
+                    </Button>
                 </div>
 
-                <div className="flex gap-4">
+                {/* Add to Cart — takes rest of space */}
+                <div className="flex-1">
                     <AddToCartButton product={product} quantity={quantity} />
-                    <BuyNowButton product={product} quantity={quantity} />
                 </div>
             </div>
 
+            {/* Buy Now — full width */}
+            <BuyNowButton product={product} quantity={quantity} />
+
+            {/* Trust Badges */}
             <TrustBadges />
         </div>
     )

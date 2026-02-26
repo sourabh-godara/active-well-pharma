@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
@@ -26,6 +27,7 @@ async function checkAdmin(supabase: any) {
 
 export async function addBenefit(productId: string, benefitText: string) {
     const supabase = await getSupabase()
+    const adminSupabase = createAdminClient()
 
     try {
         await checkAdmin(supabase)
@@ -34,8 +36,8 @@ export async function addBenefit(productId: string, benefitText: string) {
         if (!text) return { error: 'Benefit text cannot be empty' }
         if (text.length > 120) return { error: 'Benefit text too long (max 120 chars)' }
 
-        // Check limit
-        const { count, error: countError } = await supabase
+        // Check limit using admin client
+        const { count, error: countError } = await adminSupabase
             .from('product_benefits')
             .select('*', { count: 'exact', head: true })
             .eq('product_id', productId)
@@ -44,7 +46,7 @@ export async function addBenefit(productId: string, benefitText: string) {
         if ((count || 0) >= 6) return { error: 'Maximum 6 benefits allowed' }
 
         // Get next order index
-        const { data: maxOrder } = await supabase
+        const { data: maxOrder } = await adminSupabase
             .from('product_benefits')
             .select('order_index')
             .eq('product_id', productId)
@@ -54,7 +56,7 @@ export async function addBenefit(productId: string, benefitText: string) {
 
         const nextIndex = (maxOrder?.order_index ?? -1) + 1
 
-        const { data, error } = await supabase
+        const { data, error } = await adminSupabase
             .from('product_benefits')
             .insert({
                 product_id: productId,
@@ -78,11 +80,12 @@ export async function addBenefit(productId: string, benefitText: string) {
 
 export async function deleteBenefit(benefitId: string, productId: string) {
     const supabase = await getSupabase()
+    const adminSupabase = createAdminClient()
 
     try {
         await checkAdmin(supabase)
 
-        const { error } = await supabase
+        const { error } = await adminSupabase
             .from('product_benefits')
             .delete()
             .eq('id', benefitId)
@@ -101,18 +104,14 @@ export async function deleteBenefit(benefitId: string, productId: string) {
 
 export async function reorderBenefits(productId: string, items: { id: string, order_index: number }[]) {
     const supabase = await getSupabase()
+    const adminSupabase = createAdminClient()
 
     try {
         await checkAdmin(supabase)
 
-        // Validate items belong to product? 
-        // We can trust RLS + where clause logic mostly, but good to be safe.
-        // For efficiency, we just run updates.
-
-        // Transactional Reorder Logic using Temp Indices
-        // 1. Temp Update
+        // 1. Temp Update (avoid unique constraint conflicts during reorder)
         for (const item of items) {
-            const { error } = await supabase
+            const { error } = await adminSupabase
                 .from('product_benefits')
                 .update({ order_index: -100 - item.order_index, updated_at: new Date().toISOString() })
                 .eq('id', item.id)
@@ -123,7 +122,7 @@ export async function reorderBenefits(productId: string, items: { id: string, or
 
         // 2. Final Update
         for (const item of items) {
-            const { error } = await supabase
+            const { error } = await adminSupabase
                 .from('product_benefits')
                 .update({ order_index: item.order_index, updated_at: new Date().toISOString() })
                 .eq('id', item.id)

@@ -20,7 +20,7 @@ export default function AdminLayout({
                 <AdminSidebar />
             </div>
 
-            <div className="flex flex-1 flex-col lg:pl-72">
+            <div className="flex flex-1 flex-col lg:pl-72 min-h-screen overflow-y-auto">
                 <AdminHeader />
                 <main className="flex-1 py-8">
                     <div className="px-4 sm:px-6 lg:px-8">{children}</div>

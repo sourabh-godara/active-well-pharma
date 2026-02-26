@@ -1,73 +1,45 @@
 'use client'
 
-import { useState } from 'react'
-import { cn } from '@/lib/utils'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface ProductTabsProps {
-    description: string
-    ingredients?: string
-    children?: React.ReactNode // For Reviews
+    description: string | null
+    ingredients?: string | null
+    children?: React.ReactNode
 }
 
 export function ProductTabs({ description, ingredients, children }: ProductTabsProps) {
-    const [activeTab, setActiveTab] = useState<'description' | 'ingredients' | 'reviews'>('description')
-
     return (
-        <div className="mt-16">
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button
-                        onClick={() => setActiveTab('description')}
-                        className={cn(
-                            activeTab === 'description'
-                                ? 'border-green-600 text-green-600'
-                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                            'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
-                        )}
-                    >
-                        Description
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('ingredients')}
-                        className={cn(
-                            activeTab === 'ingredients'
-                                ? 'border-green-600 text-green-600'
-                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                            'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
-                        )}
-                    >
-                        Ingredients
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('reviews')}
-                        className={cn(
-                            activeTab === 'reviews'
-                                ? 'border-green-600 text-green-600'
-                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                            'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
-                        )}
-                    >
-                        Reviews
-                    </button>
-                </nav>
-            </div>
-            <div className="mt-8">
-                {activeTab === 'description' && (
-                    <div className="prose prose-sm max-w-none text-gray-500">
-                        <p>{description}</p>
+        <div className="mt-16 border-t border-border pt-8">
+            <Tabs defaultValue="description">
+                <TabsList className="h-auto w-full justify-start rounded-none border-b border-border bg-transparent p-0 gap-0">
+                    {(['description', 'ingredients', 'reviews'] as const).map((tab) => (
+                        <TabsTrigger
+                            key={tab}
+                            value={tab}
+                            className="capitalize rounded-none border-b-[3px] border-transparent px-6 py-3 text-sm font-medium text-muted-foreground bg-transparent hover:text-foreground transition-colors data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                        >
+                            {tab}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+
+                <TabsContent value="description" className="mt-8">
+                    <div className="prose prose-sm max-w-none font-body text-muted-foreground leading-relaxed">
+                        <p>{description || 'No description available.'}</p>
                     </div>
-                )}
-                {activeTab === 'ingredients' && (
-                    <div className="prose prose-sm max-w-none text-gray-500">
-                        <p>{ingredients || "All natural ingredients."}</p>
+                </TabsContent>
+
+                <TabsContent value="ingredients" className="mt-8">
+                    <div className="prose prose-sm max-w-none font-body text-muted-foreground leading-relaxed">
+                        <p>{ingredients || 'All natural ingredients.'}</p>
                     </div>
-                )}
-                {activeTab === 'reviews' && (
-                    <div>
-                        {children}
-                    </div>
-                )}
-            </div>
+                </TabsContent>
+
+                <TabsContent value="reviews" className="mt-8">
+                    {children}
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

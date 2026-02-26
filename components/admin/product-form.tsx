@@ -10,10 +10,12 @@ import { ProductWithGallery } from '@/types'
 import { createProduct, updateProduct } from '@/app/admin/products/actions'
 import { deleteProductImage } from '@/lib/actions/product-images.actions'
 
+// ─── Types ─────────────────────────────────────────────────────────────────
+
 interface GalleryPreview {
-    id: string
-    url: string
-    file?: File
+    id: string          // temp-xxx for new, real UUID for existing
+    url: string         // object URL for new, real URL for existing
+    file?: File         // only for new uploads
     isExisting: boolean
 }
 
@@ -25,6 +27,8 @@ interface BenefitItem {
 interface ProductFormProps {
     product?: ProductWithGallery  // undefined = create mode
 }
+
+// ─── Submit Button ──────────────────────────────────────────────────────────
 
 function SubmitButton({ isCreate }: { isCreate: boolean }) {
     const { pending } = useFormStatus()
@@ -40,6 +44,7 @@ function SubmitButton({ isCreate }: { isCreate: boolean }) {
     )
 }
 
+// ─── Main Component ─────────────────────────────────────────────────────────
 
 export default function ProductForm({ product }: ProductFormProps) {
     const isCreate = !product
@@ -48,6 +53,7 @@ export default function ProductForm({ product }: ProductFormProps) {
     const action = isCreate ? createProduct : updateProduct
     const [state, formAction] = useActionState(action, initialState)
 
+    // ── Gallery state ──────────────────────────────────────────────────────
     const [gallery, setGallery] = useState<GalleryPreview[]>(() => {
         if (!product?.images) return []
         return product.images.map(img => ({
@@ -59,18 +65,21 @@ export default function ProductForm({ product }: ProductFormProps) {
     const [removedExistingIds, setRemovedExistingIds] = useState<string[]>([])
     const galleryInputRef = useRef<HTMLInputElement>(null)
 
+    // ── Benefits state ─────────────────────────────────────────────────────
     const [benefits, setBenefits] = useState<BenefitItem[]>(() => {
         if (!product?.benefits) return []
         return product.benefits.map(b => ({ id: b.id, text: b.benefit_text }))
     })
     const [benefitInput, setBenefitInput] = useState('')
 
+    // ── Toast on result ────────────────────────────────────────────────────
     useEffect(() => {
         if ((state as any).message === 'INITIAL_STATE') return
         if (!state.success) toast.error((state as any).error?.message ?? 'Something went wrong')
         else if (!isCreate) toast.success('Product updated!')
     }, [state, isCreate])
 
+    // ── Gallery handlers ───────────────────────────────────────────────────
     const handleGalleryFiles = useCallback((files: FileList | null) => {
         if (!files) return
         const newItems: GalleryPreview[] = []
@@ -137,15 +146,18 @@ export default function ProductForm({ product }: ProductFormProps) {
     )
 
     return (
-        <form action={formAction} className="space-y-8 flex">
+        <form action={formAction} className="space-y-8">
+            {/* Hidden product id for edit mode */}
             {product && <input type="hidden" name="id" value={product.id} />}
 
+            {/* Hidden benefits serialization */}
             <input
                 type="hidden"
                 name="benefits"
                 value={JSON.stringify(benefits.map(b => b.text))}
             />
 
+            {/* Hidden gallery files are handled via real file input below */}
 
             {/* ── Section 1: Product Details ───────────────────────────────── */}
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

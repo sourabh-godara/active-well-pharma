@@ -2,8 +2,22 @@
 
 import { useCart } from '@/app/context/cart-context'
 import { useState } from 'react'
+import { ShoppingCart } from 'lucide-react'
 
-export function AddToCartButton({ product, quantity = 1 }: { product: any, quantity?: number }) {
+interface AddToCartProduct {
+    id: string
+    name: string
+    price: number
+    image_url: string | null
+    stock_quantity: number
+}
+
+interface AddToCartButtonProps {
+    product: AddToCartProduct
+    quantity?: number
+}
+
+export function AddToCartButton({ product, quantity = 1 }: AddToCartButtonProps) {
     const { addItem } = useCart()
     const [isAdding, setIsAdding] = useState(false)
 
@@ -14,18 +28,21 @@ export function AddToCartButton({ product, quantity = 1 }: { product: any, quant
             name: product.name,
             price: product.price,
             image_url: product.image_url,
-            quantity: quantity
+            quantity,
         })
-        setTimeout(() => setIsAdding(false), 500)
+        setTimeout(() => setIsAdding(false), 700)
     }
+
+    const outOfStock = product.stock_quantity === 0
 
     return (
         <button
             onClick={handleAddToCart}
-            disabled={product.stock_quantity === 0 || isAdding}
-            className="flex flex-1 items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={outOfStock || isAdding}
+            className="h-12 w-full flex items-center justify-center gap-2 rounded-full bg-gradient-fresh font-body font-semibold text-sm text-primary-foreground shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            {product.stock_quantity === 0 ? 'Out of Stock' : isAdding ? 'Added!' : 'Add to Cart'}
+            <ShoppingCart className="h-4 w-4" />
+            {outOfStock ? 'Out of Stock' : isAdding ? 'Added ✓' : 'Add to Cart'}
         </button>
     )
 }

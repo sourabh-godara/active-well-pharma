@@ -4,7 +4,20 @@ import { useCart } from '@/app/context/cart-context'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function BuyNowButton({ product, quantity }: { product: any, quantity: number }) {
+interface BuyNowProduct {
+    id: string
+    name: string
+    price: number
+    image_url: string | null
+    stock_quantity: number
+}
+
+interface BuyNowButtonProps {
+    product: BuyNowProduct
+    quantity: number
+}
+
+export function BuyNowButton({ product, quantity }: BuyNowButtonProps) {
     const { addItem } = useCart()
     const router = useRouter()
     const [isAdding, setIsAdding] = useState(false)
@@ -16,7 +29,7 @@ export function BuyNowButton({ product, quantity }: { product: any, quantity: nu
             name: product.name,
             price: product.price,
             image_url: product.image_url,
-            quantity: quantity
+            quantity,
         })
         router.push('/checkout')
     }
@@ -25,9 +38,9 @@ export function BuyNowButton({ product, quantity }: { product: any, quantity: nu
         <button
             onClick={handleBuyNow}
             disabled={product.stock_quantity === 0 || isAdding}
-            className="flex w-full items-center justify-center rounded-md border border-transparent bg-red-500 px-8 py-3 text-base font-medium text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="h-12 w-full flex items-center justify-center rounded-full bg-secondary font-body font-semibold text-sm text-secondary-foreground shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            {isAdding ? 'Processing...' : 'Buy Now'}
+            {isAdding ? 'Processing…' : 'Buy Now'}
         </button>
     )
 }

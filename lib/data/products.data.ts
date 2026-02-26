@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { Product } from '@/types'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const createPublicClient = () =>
     createClient(
@@ -136,8 +137,9 @@ export const getProductWithGallery = cache(async (id: string) => {
         console.error('Error fetching gallery:', imagesError)
     }
 
-    // 3. Fetch Benefits
-    const { data: benefits, error: benefitsError } = await supabase
+    // 3. Fetch Benefits — use admin client to bypass RLS on product_benefits
+    const adminSupabase = createAdminClient()
+    const { data: benefits, error: benefitsError } = await adminSupabase
         .from('product_benefits')
         .select('*')
         .eq('product_id', id)

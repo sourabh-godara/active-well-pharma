@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { ProductBenefit } from '@/types'
 import { addBenefit, deleteBenefit, reorderBenefits } from '@/lib/actions/product-benefits.actions'
 import { toast } from 'sonner'
-import { Loader2, Plus, X, GripVertical, Trash2, Check } from 'lucide-react'
+import { Loader2, Plus, GripVertical, Trash2, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface KeyBenefitsManagerProps {
@@ -19,12 +19,12 @@ export function KeyBenefitsManager({ productId, initialBenefits = [], onChange }
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [draggedItem, setDraggedItem] = useState<ProductBenefit | null>(null)
 
-    // Notify parent of changes in local mode
-    useEffect(() => {
+    // helper: notify parent after any local-mode mutation
+    const notifyParent = (updated: ProductBenefit[]) => {
         if (!productId && onChange) {
-            onChange(benefits)
+            onChange(updated)
         }
-    }, [benefits, productId, onChange])
+    }
 
     const handleAdd = async (e?: React.FormEvent | React.KeyboardEvent | React.MouseEvent) => {
         if (e) e.preventDefault()
@@ -49,7 +49,7 @@ export function KeyBenefitsManager({ productId, initialBenefits = [], onChange }
             }
             setIsSubmitting(false)
         } else {
-            // Local mode
+            // Local mode — build the full updated list then notify parent
             const newBenefit: ProductBenefit = {
                 id: `temp-${Date.now()}`,
                 product_id: '',
@@ -58,7 +58,9 @@ export function KeyBenefitsManager({ productId, initialBenefits = [], onChange }
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             }
-            setBenefits(prev => [...prev, newBenefit])
+            const updated = [...benefits, newBenefit]
+            setBenefits(updated)
+            notifyParent(updated)
             setInputValue('')
         }
     }
@@ -76,7 +78,9 @@ export function KeyBenefitsManager({ productId, initialBenefits = [], onChange }
                 setBenefits(previousBenefits) // Revert
             }
         } else {
-            setBenefits(prev => prev.filter(b => b.id !== id))
+            const updated = benefits.filter(b => b.id !== id)
+            setBenefits(updated)
+            notifyParent(updated)
         }
     }
 
@@ -151,7 +155,7 @@ export function KeyBenefitsManager({ productId, initialBenefits = [], onChange }
                     type="button"
                     onClick={(e) => handleAdd(e as any)}
                     disabled={isSubmitting || !inputValue.trim() || benefits.length >= 6}
-                    className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 </button>
