@@ -1,12 +1,10 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 export async function updateOrderStatus(orderId: string, status: string) {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+    const supabase = createAdminClient()
 
     const { error } = await supabase
         .from('orders')

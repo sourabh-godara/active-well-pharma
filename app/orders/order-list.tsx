@@ -59,7 +59,9 @@ export default function OrderList({ initialOrders }: { initialOrders: any[] }) {
                                 Order ID: <span className="font-mono text-gray-900">{order.id}</span>
                             </p>
                             <p className="text-sm text-gray-500">
-                                Date: {new Date(order.created_at).toLocaleDateString()}
+                                Date: {new Date(order.created_at).toLocaleDateString('en-IN', {
+                                    day: 'numeric', month: 'short', year: 'numeric'
+                                })}
                             </p>
                         </div>
                         <div className="flex items-center gap-4">
@@ -73,7 +75,7 @@ export default function OrderList({ initialOrders }: { initialOrders: any[] }) {
                             >
                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                             </span>
-                            <p className="text-lg font-bold text-gray-900">${order.total_amount}</p>
+                            <p className="text-lg font-bold text-gray-900">₹{Number(order.total_amount).toLocaleString('en-IN')}</p>
                         </div>
                     </div>
 
@@ -94,7 +96,7 @@ export default function OrderList({ initialOrders }: { initialOrders: any[] }) {
                                         <h3>
                                             <Link href={`/product/${item.product_id}`}>{item.product?.name}</Link>
                                         </h3>
-                                        <p className="ml-4">${item.price_at_purchase}</p>
+                                        <p className="ml-4">₹{Number(item.price_at_purchase).toLocaleString('en-IN')}</p>
                                     </div>
                                     <p className="mt-1 text-sm text-gray-500">Qty {item.quantity}</p>
                                 </div>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Menu, X, ShoppingBag, Search, User } from "lucide-react";
 import { UserNav } from "./user-nav";
 import Link from "next/link";
+import { useCart } from "@/app/context/cart-context";
 
 const navLinks = [
     { label: "Shop", href: "/shop" },
@@ -12,6 +13,8 @@ const navLinks = [
 
 export const Navbar = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { items } = useCart()
+    const cartCount = items.reduce((sum, i) => sum + i.quantity, 0)
 
     return (
         <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -48,9 +51,11 @@ export const Navbar = () => {
                     <UserNav />
                     <Link href="/cart" className="p-2 text-foreground/70 hover:text-primary transition-colors relative" aria-label="Cart">
                         <ShoppingBag className="w-5 h-5" />
-                        <span className="absolute -top-0 -right-0 w-4 h-4 bg-secondary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                            2
-                        </span>
+                        {cartCount > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-0.5 bg-secondary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                                {cartCount > 99 ? '99+' : cartCount}
+                            </span>
+                        )}
                     </Link>
                     <button
                         className="md:hidden p-2 text-foreground/70"

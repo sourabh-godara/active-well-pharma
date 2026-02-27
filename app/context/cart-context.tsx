@@ -7,6 +7,7 @@ interface CartItem {
     id: string
     name: string
     price: number
+    original_price?: number   // MRP — used to display savings
     quantity: number
     image_url: string | null
 }

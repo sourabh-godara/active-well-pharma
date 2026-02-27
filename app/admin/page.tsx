@@ -1,24 +1,27 @@
-
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { DollarSign, Package, ShoppingCart, Users } from 'lucide-react'
+import { DollarSign, Package, ShoppingCart, Clock } from 'lucide-react'
 import { StatsCard } from '@/components/admin/stats-card'
 import { PerformanceChart } from '@/components/admin/performance-chart'
 import { StatusSummary } from '@/components/admin/status-summary'
-import OrderRow from './orders/order-row'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table'
 
 export default async function AdminDashboard() {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
-    // Fetch metrics data
     const [
         { count: productsCount },
         { count: ordersCount },
         { data: revenueData },
         { data: pendingOrders },
         { data: recentOrders },
-        { data: allOrders } // Fetch all orders for chart
+        { data: allOrders }
     ] = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }),
         supabase.from('orders').select('*', { count: 'exact', head: true }),
@@ -28,84 +31,124 @@ export default async function AdminDashboard() {
         supabase.from('orders').select('created_at, total_amount').neq('status', 'cancelled').order('created_at', { ascending: true })
     ])
 
-    const totalRevenue = revenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0
+    const totalRevenue = revenueData?.reduce((sum, o) => sum + o.total_amount, 0) || 0
 
-    // Process Chart Data (Group by date)
-    const chartDataMap = new Map<string, number>();
+    const chartDataMap = new Map<string, number>()
     allOrders?.forEach(order => {
-        const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        chartDataMap.set(date, (chartDataMap.get(date) || 0) + order.total_amount);
-    });
+        const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        chartDataMap.set(date, (chartDataMap.get(date) || 0) + order.total_amount)
+    })
+    const chartData = Array.from(chartDataMap.entries())
+        .map(([name, value]) => ({ name, value }))
+        .slice(-7)
 
-    // Convert map to array and take last 7 days or points
-    const chartData = Array.from(chartDataMap.entries()).map(([name, value]) => ({ name, value })).slice(-7);
+    // Badge variant helper
+    const statusBadge = (status: string) => {
+        switch (status) {
+            case 'delivered': return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-xs">Delivered</Badge>
+            case 'confirmed': return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-xs">Confirmed</Badge>
+            case 'shipped': return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-xs">Shipped</Badge>
+            case 'cancelled': return <Badge variant="destructive" className="text-xs">Cancelled</Badge>
+            default: return <Badge variant="secondary" className="text-xs">Pending</Badge>
+        }
+    }
 
     return (
-        <div className="space-y-8">
-            {/* Top Stats Row */}
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="max-w-7xl mx-auto space-y-6">
+            {/* Page title */}
+            <div>
+                <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+                <p className="text-muted-foreground text-sm">Store overview and recent activity.</p>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
                     title="Total Revenue"
-                    value={`$${totalRevenue.toFixed(2)}`}
+                    value={`₹${totalRevenue.toFixed(2)}`}
                     icon={DollarSign}
-
+                    description="All non-cancelled orders"
                 />
                 <StatsCard
                     title="Total Orders"
-                    value={ordersCount || 0}
+                    value={ordersCount ?? 0}
                     icon={ShoppingCart}
-
+                    description="Lifetime orders placed"
                 />
                 <StatsCard
                     title="Total Products"
-                    value={productsCount || 0}
+                    value={productsCount ?? 0}
                     icon={Package}
-
+                    description="Active catalogue items"
                 />
                 <StatsCard
                     title="Pending Orders"
-                    value={pendingOrders?.length || 0}
-                    icon={Users}
-
+                    value={pendingOrders?.length ?? 0}
+                    icon={Clock}
+                    description="Awaiting processing"
                 />
             </div>
 
-            {/* Middle Row: Chart & Status Summary */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {/* Chart + Status Summary */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <div className="lg:col-span-2">
                     <PerformanceChart data={chartData} />
                 </div>
                 <div>
-                    <StatusSummary pendingCount={pendingOrders?.length || 0} totalCount={ordersCount || 0} />
+                    <StatusSummary
+                        pendingCount={pendingOrders?.length ?? 0}
+                        totalCount={ordersCount ?? 0}
+                    />
                 </div>
             </div>
 
-            {/* Bottom Row: Recent Orders (Todo List Style) */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-3 rounded-lg bg-white p-6 shadow">
-                    <h3 className="mb-4 text-base font-semibold leading-6 text-gray-900">Recent Transactions</h3>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-300">
-                            <thead>
-                                <tr>
-                                    <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Order ID</th>
-                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Amount</th>
-                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
-                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date</th>
-                                    <th className="relative py-3.5 pl-3 pr-4 sm:pr-0">
-                                        <span className="sr-only">Edit</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {recentOrders?.map((order) => (
-                                    <OrderRow key={order.id} order={order} />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            {/* Recent Transactions */}
+            <Card>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold">Recent Transactions</CardTitle>
+                    <p className="text-xs text-muted-foreground">Last 5 orders placed in the store</p>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <ScrollArea className="w-full">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="pl-6">Order ID</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Date</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {!recentOrders || recentOrders.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
+                                            No transactions yet.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    recentOrders.map(order => (
+                                        <TableRow key={order.id}>
+                                            <TableCell className="pl-6 font-mono text-xs text-muted-foreground">
+                                                #{order.id.slice(0, 8).toUpperCase()}
+                                            </TableCell>
+                                            <TableCell className="font-medium text-sm">
+                                                ₹{order.total_amount?.toFixed(2) ?? '—'}
+                                            </TableCell>
+                                            <TableCell>{statusBadge(order.status)}</TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">
+                                                {new Date(order.created_at).toLocaleDateString('en-IN', {
+                                                    day: 'numeric', month: 'short', year: 'numeric'
+                                                })}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
         </div>
     )
 }

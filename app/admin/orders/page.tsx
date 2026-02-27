@@ -1,16 +1,43 @@
 
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
+import { createAdminClient } from '@/lib/supabase/admin'
 import OrderRow from './order-row'
 
 export default async function AdminOrdersPage() {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+    const supabase = createAdminClient()
 
-    const { data: orders } = await supabase
+    const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select('*, profiles(full_name)')
+        .select('*, order_items(*, product:products(name, image_url)), delivery_address:addresses(*)')
         .order('created_at', { ascending: false })
+
+    if (ordersError) {
+        console.error('[Admin Orders] Failed to fetch orders:', ordersError)
+    }
+
+    // Fetch profiles for all order user_ids
+    const userIds = [...new Set((orders ?? []).map((o: any) => o.user_id))]
+    const profileMap: Record<string, { full_name: string | null; email: string | null }> = {}
+
+    if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', userIds)
+
+        if (profilesError) {
+            console.error('[Admin Orders] Failed to fetch profiles:', profilesError)
+        }
+
+        for (const p of profiles ?? []) {
+            profileMap[p.id] = { full_name: p.full_name, email: p.email }
+        }
+    }
+
+    // Attach profile data to each order
+    const enrichedOrders = (orders ?? []).map((order: any) => ({
+        ...order,
+        profiles: profileMap[order.user_id] ?? null,
+    }))
 
     return (
         <div className="px-4 sm:px-6 lg:px-8">
@@ -37,9 +64,17 @@ export default async function AdminOrdersPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white">
-                                {orders?.map((order) => (
-                                    <OrderRow key={order.id} order={order} />
-                                ))}
+                                {enrichedOrders.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-10 text-center text-sm text-gray-400">
+                                            No orders yet.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    enrichedOrders.map((order: any) => (
+                                        <OrderRow key={order.id} order={order} />
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>

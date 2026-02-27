@@ -18,7 +18,6 @@ export default async function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Navbar />
             <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight mb-8">
                     My Orders

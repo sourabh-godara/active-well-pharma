@@ -1,43 +1,28 @@
-
 import { LucideIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface StatsCardProps {
     title: string
     value: string | number
     icon: LucideIcon
-    change?: string
-    changeType?: 'positive' | 'negative' | 'neutral'
-    subtext?: string
+    description?: string
 }
 
-export function StatsCard({ title, value, icon: Icon, change, changeType = 'neutral', subtext }: StatsCardProps) {
+export function StatsCard({ title, value, icon: Icon, description }: StatsCardProps) {
     return (
-        <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-                <div>
-                    <dt className="truncate text-sm font-medium text-gray-500">{title}</dt>
-                    <dd className="mt-1 text-3xl font-bold tracking-tight text-gray-900">{value}</dd>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+                <div className="rounded-md bg-indigo-50 p-2">
+                    <Icon className="h-4 w-4 text-indigo-600" />
                 </div>
-                <div className="rounded-md bg-indigo-50 p-3">
-                    <Icon className="h-6 w-6 text-indigo-600" aria-hidden="true" />
-                </div>
-            </div>
-            {(change || subtext) && (
-                <div className="mt-4 flex items-baseline text-sm">
-                    {change && (
-                        <span
-                            className={cn(
-                                changeType === 'positive' ? 'text-green-600' : changeType === 'negative' ? 'text-red-600' : 'text-gray-500',
-                                'font-semibold'
-                            )}
-                        >
-                            {change}
-                        </span>
-                    )}
-                    {subtext && <span className="ml-2 text-gray-500">{subtext}</span>}
-                </div>
-            )}
-        </div>
+            </CardHeader>
+            <CardContent>
+                <div className="text-3xl font-bold tracking-tight text-foreground">{value}</div>
+                {description && (
+                    <p className="text-xs text-muted-foreground mt-1">{description}</p>
+                )}
+            </CardContent>
+        </Card>
     )
 }

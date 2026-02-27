@@ -1,69 +1,78 @@
 'use client'
 
 import Link from 'next/link'
-import { LayoutDashboard, Package, ShoppingCart, LogOut, Users, Megaphone, Presentation } from 'lucide-react'
-import { logout } from '@/app/auth/actions'
 import { usePathname } from 'next/navigation'
+import {
+    LayoutDashboard, Package, ShoppingCart, LogOut,
+    Users, Megaphone, Presentation, Ticket
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logout } from '@/app/auth/actions'
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 
 const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { name: 'Products', href: '/admin/products', icon: Package },
-    { name: 'Banners', href: '/admin/banners', icon: Megaphone },
-    { name: 'Pop-Ups', href: '/admin/promotions', icon: Presentation },
-    { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
+    { name: 'Products', href: '/admin/products', icon: Package, exact: false },
+    { name: 'Banners', href: '/admin/banners', icon: Megaphone, exact: false },
+    { name: 'Pop-Ups', href: '/admin/promotions', icon: Presentation, exact: false },
+    { name: 'Coupons', href: '/admin/coupons', icon: Ticket, exact: false },
+    { name: 'Users', href: '/admin/users', icon: Users, exact: false },
+    { name: 'Orders', href: '/admin/orders', icon: ShoppingCart, exact: false },
 ]
 
-export function AdminSidebar() {
+// Pure sidebar content — no positioning, no fixed/absolute
+export function AdminSidebarContent() {
     const pathname = usePathname()
 
     return (
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
-            <div className="flex h-16 shrink-0 items-center justify-center border-b border-gray-100">
-                <span className="text-2xl font-bold text-indigo-600">Dashboard</span>
+        <div className="flex h-full flex-col bg-white">
+            {/* Logo */}
+            <div className="flex h-16 shrink-0 items-center px-6 border-b">
+                <span className="text-base font-bold text-indigo-600 tracking-tight">ActiveWell Admin</span>
             </div>
-            <nav className="flex flex-1 flex-col mt-4">
-                <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                    <li>
-                        <div className="text-xs font-semibold leading-6 text-gray-400">Main Menu</div>
-                        <ul role="list" className="-mx-2 space-y-1 mt-2">
-                            {navigation.map((item) => (
-                                <li key={item.name}>
-                                    <Link
-                                        href={item.href}
-                                        className={cn(
-                                            pathname === item.href
-                                                ? 'bg-indigo-50 text-indigo-600'
-                                                : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50',
-                                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors duration-200'
-                                        )}
-                                    >
-                                        <item.icon
-                                            className={cn(
-                                                pathname === item.href ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600',
-                                                'h-6 w-6 shrink-0 transition-colors duration-200'
-                                            )}
-                                            aria-hidden="true"
-                                        />
-                                        {item.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </li>
-                    <li className="mt-auto">
-                        <button
-                            type="button"
-                            onClick={() => logout()}
-                            className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 w-full transition-colors duration-200"
-                        >
-                            <LogOut className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-red-600 transition-colors duration-200" aria-hidden="true" />
-                            Sign out
-                        </button>
-                    </li>
-                </ul>
-            </nav>
+
+            <ScrollArea className="flex-1 px-3 py-4">
+                <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Main Menu
+                </p>
+                <nav className="space-y-0.5">
+                    {navigation.map((item) => {
+                        const isActive = item.exact
+                            ? pathname === item.href
+                            : pathname === item.href || pathname.startsWith(item.href + '/')
+                        return (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className={cn(
+                                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                                    isActive
+                                        ? 'bg-indigo-50 text-indigo-700'
+                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                )}
+                            >
+                                <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-indigo-600' : '')} />
+                                {item.name}
+                            </Link>
+                        )
+                    })}
+                </nav>
+            </ScrollArea>
+
+            <div className="p-3 border-t">
+                <Separator className="mb-3" />
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-3 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                    onClick={() => logout()}
+                >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                </Button>
+            </div>
         </div>
     )
 }
