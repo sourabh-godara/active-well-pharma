@@ -27,7 +27,7 @@ const Footer = () => {
                                 placeholder="Enter your email"
                                 className="flex-1 px-5 py-3 rounded-full bg-background text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                             />
-                            <Button variant="coral" size="lg" className="rounded-full px-8">
+                            <Button size="lg" className="rounded-full px-8">
                                 Subscribe
                             </Button>
                         </div>
