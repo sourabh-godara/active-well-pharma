@@ -30,7 +30,7 @@ export function AdminSidebarContent() {
         <div className="flex h-full flex-col bg-white">
             {/* Logo */}
             <div className="flex h-16 shrink-0 items-center px-6 border-b">
-                <span className="text-base font-bold text-indigo-600 tracking-tight">ActiveWell Admin</span>
+                <span className="text-base font-bold text-indigo-600 tracking-tight">Dashboard</span>
             </div>
 
             <ScrollArea className="flex-1 px-3 py-4">
