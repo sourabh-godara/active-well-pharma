@@ -1,17 +1,11 @@
-
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
-import Link from 'next/link'
+// app/admin/promotions/page.tsx
+import { getAdminPromotions } from '@/lib/data/admin.data'
 import { PromotionList } from './promotion-list'
 
-export default async function PromotionsPage() {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+export const dynamic = 'force-dynamic'
 
-    const { data: promotions } = await supabase
-        .from('promotions')
-        .select('*')
-        .order('created_at', { ascending: false })
+export default async function PromotionsPage() {
+    const promotions = await getAdminPromotions()
 
     return (
         <div>
@@ -23,9 +17,8 @@ export default async function PromotionsPage() {
                     </p>
                 </div>
             </div>
-
             <div className="mt-8 flow-root">
-                <PromotionList initialPromotions={promotions || []} />
+                <PromotionList initialPromotions={promotions} />
             </div>
         </div>
     )

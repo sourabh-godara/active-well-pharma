@@ -1,12 +1,26 @@
-
+// lib/supabase/session.ts
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { jwtDecode } from 'jwt-decode'
 
-export async function updateSession(request: NextRequest) {
+interface JwtCustomClaims {
+    user_role?: string
+    is_blocked?: boolean
+    sub?: string
+    exp?: number
+}
+
+function decodeSessionClaims(accessToken: string): JwtCustomClaims {
+    try {
+        return jwtDecode<JwtCustomClaims>(accessToken)
+    } catch {
+        return {}
+    }
+}
+
+export async function updateSession(request: NextRequest): Promise<NextResponse> {
     let response = NextResponse.next({
-        request: {
-            headers: request.headers,
-        },
+        request: { headers: request.headers },
     })
 
     const supabase = createServerClient(
@@ -18,14 +32,10 @@ export async function updateSession(request: NextRequest) {
                     return request.cookies.getAll()
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) =>
+                    cookiesToSet.forEach(({ name, value }) =>
                         request.cookies.set(name, value)
                     )
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    })
+                    response = NextResponse.next({ request: { headers: request.headers } })
                     cookiesToSet.forEach(({ name, value, options }) =>
                         response.cookies.set(name, value, options)
                     )
@@ -34,51 +44,41 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // Single cookie-based session read — zero DB round-trips
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user ?? null
 
+    // Decode JWT custom claims — populated by custom_access_token_hook
+    const claims: JwtCustomClaims = session?.access_token
+        ? decodeSessionClaims(session.access_token)
+        : {}
+
+    const { pathname } = request.nextUrl
+    const isAuthPage = pathname.startsWith('/auth/login') || pathname.startsWith('/auth/signup')
+    const isAdminPage = pathname.startsWith('/admin')
+    const isDashboardPage = pathname.startsWith('/dashboard')
 
     // Redirect authenticated users away from auth pages
-    if (user && (request.nextUrl.pathname.startsWith('/auth/login') || request.nextUrl.pathname.startsWith('/auth/signup'))) {
+    if (user !== null && isAuthPage) {
         return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // Protected routes logic
-    if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
+    // Redirect unauthenticated users away from protected pages
+    if (user === null && (isDashboardPage || isAdminPage)) {
         return NextResponse.redirect(new URL('/auth/login', request.url))
     }
 
-    if (request.nextUrl.pathname.startsWith('/admin')) {
-        if (!user) {
-            return NextResponse.redirect(new URL('/auth/login', request.url))
-        }
-
-        // Check for admin role
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-
-        if (profile?.role !== 'admin') {
-            return NextResponse.redirect(new URL('/', request.url))
-        }
+    // Admin role check via JWT claim — no DB query
+    if (isAdminPage && claims.user_role !== 'admin') {
+        return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // Check if user is blocked (for all authenticated routes)
-    if (user) {
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('is_blocked')
-            .eq('id', user.id)
-            .single()
-
-        if (profile?.is_blocked) {
-            // Sign out
-            await supabase.auth.signOut()
-            return NextResponse.redirect(new URL('/auth/login?error=Your account is blocked', request.url))
-        }
+    // Blocked user check via JWT claim — no DB query
+    if (user !== null && claims.is_blocked === true) {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(
+            new URL('/auth/login?error=Your account is blocked', request.url)
+        )
     }
 
     return response

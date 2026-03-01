@@ -1,170 +1,161 @@
+// lib/data/products.data.ts
 import { createClient } from '@supabase/supabase-js'
-import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
-import { Product } from '@/types'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { Product, ProductImage, ProductBenefit, ProductWithGallery } from '@/types'
 
-export const createPublicClient = () =>
-    createClient(
+// ─── Internal helpers ────────────────────────────────────────────────────────
+
+function createPublicClient() {
+    return createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
-
-export const getProducts = cache(async () => {
-    const supabase = createPublicClient()
-
-    const { data, error } = await supabase
-        .from('products')
-        .select('id, name, price, image_url, stock_quantity, description, is_active')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-
-    if (error) {
-        console.error('Error fetching products:', error)
-        return []
-    }
-    return data
-})
-
-export const getProductById = cache(async (id: string) => {
-    const supabase = createPublicClient()
-
-    const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-    if (error) {
-        console.error('Error fetching product by id:', id, error)
-        return null
-    }
-    return data
-})
-
-export const getProductsWithRating = async () => {
-    const fn = unstable_cache(
-        async () => {
-            const supabase = createPublicClient()
-            console.log('Fetching products with rating...')
-
-            // 1. Fetch Products
-            const { data: products, error: productsError } = await supabase
-                .from('products')
-                .select('*')
-                .eq('is_active', true)
-                .order('created_at', { ascending: false })
-
-            if (productsError) {
-                console.error('Error fetching products:', productsError)
-                return []
-            }
-
-            if (!products || products.length === 0) return []
-
-            // 2. Fetch Ratings (Optimization: Fetch only needed fields)
-            const productIds = products.map(p => p.id)
-            const { data: reviews, error: reviewsError } = await supabase
-                .from('reviews')
-                .select('product_id, rating')
-                .in('product_id', productIds)
-
-            if (reviewsError) {
-                console.error('Error fetching reviews for aggregation:', reviewsError)
-                // Return products with default 0 ratings
-                return products.map(p => ({ ...p, average_rating: 0, total_reviews: 0 } as Product & { average_rating: number, total_reviews: number }))
-            }
-
-            // 3. Aggregate in Memory
-            const ratingMap = new Map<string, { count: number, sum: number }>()
-
-            // Initialize map ensures we have entries even for 0 reviews
-            products.forEach(p => {
-                ratingMap.set(p.id, { count: 0, sum: 0 })
-            })
-
-            reviews?.forEach(r => {
-                const entry = ratingMap.get(r.product_id)
-                if (entry) {
-                    entry.count++
-                    entry.sum += r.rating
-                }
-            })
-
-            // 4. Merge
-            const result = products.map(p => {
-                const stats = ratingMap.get(p.id)!
-                const avg = stats.count > 0 ? stats.sum / stats.count : 0
-                return {
-                    ...p,
-                    average_rating: Number(avg.toFixed(1)),
-                    total_reviews: stats.count
-                }
-            })
-
-            return result
-        },
-        ['products-with-rating'],
-        { tags: ['products'], revalidate: 60 }
-    )
-
-    return fn()
 }
 
-export const getProductWithGallery = cache(async (id: string) => {
-    const supabase = createPublicClient()
+type ProductRow = Omit<Product, 'gallery' | 'images' | 'benefits'>
 
-    // 1. Fetch Product
-    const { data: product, error: productError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single()
+type ProductWithRating = ProductRow & {
+    average_rating: number
+    total_reviews: number
+}
 
-    if (productError || !product) {
-        console.error('Error fetching product:', id, productError)
-        return null
-    }
+// ─── Public cached reads ─────────────────────────────────────────────────────
 
-    // 2. Fetch Gallery
-    const { data: images, error: imagesError } = await supabase
-        .from('product_images')
-        .select('*')
-        .eq('product_id', id)
-        .order('order_index', { ascending: true })
+/**
+ * Lightweight product list for listing pages.
+ * Cached across requests for 5 minutes, tagged 'products'.
+ */
+export const getProducts = unstable_cache(
+    async (): Promise<ProductRow[]> => {
+        const supabase = createPublicClient()
+        const { data, error } = await supabase
+            .from('products')
+            .select('id, name, price, image_url, stock_quantity, description, is_active, created_at, updated_at')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
 
-    if (imagesError) {
-        console.error('Error fetching gallery:', imagesError)
-    }
+        if (error) {
+            console.error('[getProducts] error:', error)
+            return []
+        }
+        return data ?? []
+    },
+    ['products-list'],
+    { tags: ['products'], revalidate: 300 }
+)
 
-    // 3. Fetch Benefits — use admin client to bypass RLS on product_benefits
-    const adminSupabase = createAdminClient()
-    const { data: benefits, error: benefitsError } = await adminSupabase
-        .from('product_benefits')
-        .select('*')
-        .eq('product_id', id)
-        .order('order_index', { ascending: true })
+/**
+ * Full product list with aggregated ratings.
+ * Used on homepage and related products sections.
+ * Cached across requests for 5 minutes, tagged 'products' + 'reviews'.
+ */
+export const getProductsWithRating = unstable_cache(
+    async (): Promise<ProductWithRating[]> => {
+        const supabase = createPublicClient()
 
-    if (benefitsError) {
-        console.error('Error fetching benefits:', benefitsError)
-    }
+        const { data: products, error: productsError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
 
-    // 4. Combine
-    // Primary image is always first, then gallery images
-    const gallery: string[] = []
-    if (product.image_url) gallery.push(product.image_url)
+        if (productsError) {
+            console.error('[getProductsWithRating] products error:', productsError)
+            return []
+        }
+        if (!products || products.length === 0) return []
 
-    // Add additional images
-    if (images && images.length > 0) {
-        images.forEach(img => {
-            gallery.push(img.image_url)
+        const productIds = products.map((p) => p.id as string)
+
+        const { data: reviews, error: reviewsError } = await supabase
+            .from('reviews')
+            .select('product_id, rating')
+            .in('product_id', productIds)
+
+        if (reviewsError) {
+            console.error('[getProductsWithRating] reviews error:', reviewsError)
+            return products.map((p) => ({ ...p, average_rating: 0, total_reviews: 0 }))
+        }
+
+        // Aggregate ratings in memory — avoids a separate DB aggregation call
+        const ratingMap = new Map<string, { count: number; sum: number }>(
+            products.map((p) => [p.id as string, { count: 0, sum: 0 }])
+        )
+
+        for (const r of reviews ?? []) {
+            const entry = ratingMap.get(r.product_id as string)
+            if (entry) {
+                entry.count++
+                entry.sum += r.rating as number
+            }
+        }
+
+        return products.map((p) => {
+            const stats = ratingMap.get(p.id as string) ?? { count: 0, sum: 0 }
+            return {
+                ...p,
+                average_rating: stats.count > 0 ? Number((stats.sum / stats.count).toFixed(1)) : 0,
+                total_reviews: stats.count,
+            }
         })
-    }
+    },
+    ['products-with-rating'],
+    { tags: ['products', 'reviews'], revalidate: 300 }
+)
 
-    return {
-        ...product,
-        gallery,
-        images: images || [], // Full image objects for admin
-        benefits: benefits || []
-    }
-})
+/**
+ * Per-product detail with gallery images and benefits.
+ * Parallelized fetches. Cached per product ID for 5 minutes.
+ * Tagged 'products' + `product-{id}` for surgical invalidation.
+ */
+export function getProductWithGallery(id: string): Promise<ProductWithGallery | null> {
+    return unstable_cache(
+        async (): Promise<ProductWithGallery | null> => {
+            const supabase = createPublicClient()
+            const adminSupabase = createAdminClient()
+
+            // Parallel fetch — eliminates sequential waterfall
+            const [
+                { data: product, error: productError },
+                { data: images, error: imagesError },
+                { data: benefits, error: benefitsError },
+            ] = await Promise.all([
+                supabase.from('products').select('*').eq('id', id).single(),
+                supabase
+                    .from('product_images')
+                    .select('*')
+                    .eq('product_id', id)
+                    .order('order_index', { ascending: true }),
+                adminSupabase
+                    .from('product_benefits')
+                    .select('*')
+                    .eq('product_id', id)
+                    .order('order_index', { ascending: true }),
+            ])
+
+            if (productError || product === null) {
+                console.error('[getProductWithGallery] product error:', id, productError)
+                return null
+            }
+
+            if (imagesError) console.error('[getProductWithGallery] images error:', imagesError)
+            if (benefitsError) console.error('[getProductWithGallery] benefits error:', benefitsError)
+
+            const gallery: string[] = []
+            if (product.image_url !== null) gallery.push(product.image_url as string)
+            for (const img of images ?? []) {
+                gallery.push(img.image_url as string)
+            }
+
+            return {
+                ...product,
+                gallery,
+                images: (images ?? []) as ProductImage[],
+                benefits: (benefits ?? []) as ProductBenefit[],
+            }
+        },
+        [`product-gallery-${id}`],
+        { tags: [`product-${id}`, 'products'], revalidate: 300 }
+    )()
+}

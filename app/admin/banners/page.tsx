@@ -1,18 +1,11 @@
-
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+// app/admin/banners/page.tsx
+import { getAdminBanners } from '@/lib/data/admin.data'
 import { BannerList } from './banner-list'
 
-export default async function BannersPage() {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+export const dynamic = 'force-dynamic'
 
-    const { data: banners } = await supabase
-        .from('banners')
-        .select('*')
-        .order('order_index', { ascending: true })
+export default async function BannersPage() {
+    const banners = await getAdminBanners()
 
     return (
         <div>
@@ -23,14 +16,10 @@ export default async function BannersPage() {
                         Manage homepage hero banners. Drag and drop to reorder.
                     </p>
                 </div>
-                <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-                    {/* This button will trigger a modal in client component */}
-                    {/* For simplicity in this step, BannerList will handle the "Add" state or we pass it down */}
-                </div>
+                <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none" />
             </div>
-
             <div className="mt-8 flow-root">
-                <BannerList initialBanners={banners || []} />
+                <BannerList initialBanners={banners} />
             </div>
         </div>
     )

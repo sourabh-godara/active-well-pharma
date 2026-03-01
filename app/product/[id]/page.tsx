@@ -2,7 +2,7 @@
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import { getProductWithGallery, getProductsWithRating } from '@/lib/data/products.data'
-import { getProductReviews, getCachedProductRating } from '@/lib/actions/reviews'
+import { getProductReviews, getCachedProductRating } from '@/lib/data/reviews.data'
 import { ReviewList } from '@/components/reviews/review-list'
 import { ReviewForm } from '@/components/reviews/review-form'
 import { StarRating } from '@/components/reviews/star-rating'

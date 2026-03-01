@@ -1,18 +1,13 @@
-
+// app/admin/products/page.tsx
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
+import { getAdminProducts } from '@/lib/data/admin.data'
 import ProductTable from './product-table'
 
-export default async function AdminProductsPage() {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+export const dynamic = 'force-dynamic'
 
-    const { data: products } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
+export default async function AdminProductsPage() {
+    const products = await getAdminProducts()
 
     return (
         <div className="space-y-6">
@@ -26,9 +21,8 @@ export default async function AdminProductsPage() {
                     Add Product
                 </Link>
             </div>
-
             <div className="bg-white shadow sm:rounded-lg">
-                <ProductTable products={products || []} />
+                <ProductTable products={products} />
             </div>
         </div>
     )
