@@ -4,6 +4,7 @@ import { Menu, X, ShoppingBag, Search, User } from "lucide-react";
 import { UserNav } from "./user-nav";
 import Link from "next/link";
 import { useCart } from "@/app/context/cart-context";
+import { Button } from "./ui/button";
 
 const navLinks = [
     { label: "Shop", href: "/shop" },
@@ -25,29 +26,26 @@ export const Navbar = () => {
 
             <nav className="container-brand flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
                 {/* Logo */}
-                <a href="/" className="font-display text-xl sm:text-2xl font-bold text-primary tracking-tight">
+                <Link href="/" className="font-display text-xl sm:text-2xl font-bold text-primary tracking-tight">
                     ActiveWell<span className="text-secondary"> Pharma</span>
-                </a>
+                </Link>
 
                 {/* Desktop nav */}
                 <ul className="hidden md:flex items-center gap-8">
                     {navLinks.map((link) => (
                         <li key={link.label}>
-                            <a
+                            <Link
                                 href={link.href}
                                 className="font-body text-sm font-medium text-foreground/80 hover:text-primary transition-colors relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-[-4px] after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
                             >
                                 {link.label}
-                            </a>
+                            </Link>
                         </li>
                     ))}
                 </ul>
 
                 {/* Right icons */}
                 <div className="flex items-center gap-3">
-                    <button className="p-2 text-foreground/70 hover:text-primary transition-colors" aria-label="Search">
-                        <Search className="w-5 h-5" />
-                    </button>
                     <UserNav />
                     <Link href="/cart" className="p-2 text-foreground/70 hover:text-primary transition-colors relative" aria-label="Cart">
                         <ShoppingBag className="w-5 h-5" />

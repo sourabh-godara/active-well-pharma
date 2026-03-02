@@ -1,0 +1,7 @@
+﻿lib/actions/reviews.ts(166,5): error TS2554: Expected 2 arguments, but got 1.
+lib/actions/reviews.ts(167,5): error TS2554: Expected 2 arguments, but got 1.
+lib/actions/reviews.ts(196,9): error TS2554: Expected 2 arguments, but got 1.
+lib/actions/reviews.ts(197,9): error TS2554: Expected 2 arguments, but got 1.
+lib/actions/reviews.ts(216,5): error TS2554: Expected 2 arguments, but got 1.
+lib/actions/reviews.ts(217,5): error TS2554: Expected 2 arguments, but got 1.
+lib/actions/reviews.ts(260,9): error TS2554: Expected 2 arguments, but got 1.

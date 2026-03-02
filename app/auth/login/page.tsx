@@ -1,17 +1,55 @@
-
-import { login } from '../actions'
-import LoginForm from './login-form'
+import { Leaf, Sparkles } from "lucide-react";
+import LoginForm from './login-form';
 
 export default function LoginPage() {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50">
-            <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md">
-                <div className="text-center">
-                    <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
-                        Sign in to your account
-                    </h2>
+        <div className="min-h-screen flex bg-background">
+            {/* Left - Decorative */}
+            <div className="hidden lg:flex lg:w-1/2 bg-gradient-hero relative overflow-hidden items-center justify-center">
+                <div className="absolute inset-0 opacity-20">
+                    {[...Array(6)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute rounded-full bg-primary/30 animate-pulse"
+                            style={{
+                                width: `${60 + i * 30}px`,
+                                height: `${60 + i * 30}px`,
+                                top: `${10 + i * 15}%`,
+                                left: `${5 + i * 16}%`,
+                                animationDelay: `${i * 0.5}s`,
+                            }}
+                        />
+                    ))}
                 </div>
-                <LoginForm />
+                <div className="relative z-10 text-center px-12 space-y-6">
+                    <div className="inline-flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-5 py-2 shadow-card">
+                        <Leaf className="w-5 h-5 text-primary" />
+                        <span className="font-body font-semibold text-primary">ActiveWell Pharma</span>
+                    </div>
+                    <h2 className="text-4xl font-display font-bold text-foreground leading-tight">
+                        Welcome Back to Your <span className="text-gradient-fresh">Wellness Journey</span>
+                    </h2>
+                    <p className="text-muted-foreground font-body text-lg max-w-md mx-auto">
+                        Your personalized health rituals, rewards, and favorites are waiting for you.
+                    </p>
+                </div>
+            </div>
+
+            {/* Right - Form */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12">
+                <div className="w-full max-w-md space-y-8">
+                    <div className="text-center lg:text-left space-y-2">
+                        <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
+                            <Leaf className="w-6 h-6 text-primary" />
+                            <span className="font-body font-bold text-xl text-primary">ActiveWell</span>
+                        </div>
+                        <h1 className="text-3xl font-display font-bold text-foreground">Log In</h1>
+                        <p className="text-muted-foreground font-body">Enter your credentials to continue</p>
+                    </div>
+
+                    <LoginForm />
+
+                </div>
             </div>
         </div>
     )

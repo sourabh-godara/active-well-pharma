@@ -31,7 +31,7 @@ export function BuyNowButton({ product, quantity }: BuyNowButtonProps) {
             image_url: product.image_url,
             quantity,
         })
-        router.push('/checkout')
+        router.push('/cart')
     }
 
     return (

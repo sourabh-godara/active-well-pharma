@@ -11,7 +11,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { logout } from '@/app/auth/actions'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 interface AdminHeaderClientProps {
     fullName: string
@@ -19,6 +20,14 @@ interface AdminHeaderClientProps {
 }
 
 export function AdminHeaderClient({ fullName, initials }: AdminHeaderClientProps) {
+    const router = useRouter()
+    const supabase = createClient()
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut()
+        router.push('/')
+    }
+
     return (
         <div className="flex flex-1 items-center justify-between">
             <div className="flex items-center gap-3">
@@ -59,7 +68,7 @@ export function AdminHeaderClient({ fullName, initials }: AdminHeaderClientProps
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-                            onClick={() => logout()}
+                            onClick={handleSignOut}
                         >
                             <LogOut className="h-4 w-4" />
                             Sign out

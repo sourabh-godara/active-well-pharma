@@ -1,3 +1,4 @@
+// app/context/user-context.tsx
 'use client'
 
 import {
@@ -42,9 +43,10 @@ export function UserProvider({
     const [user, setUser] = useState<User | null>(initialUser)
     const [profile, setProfile] = useState<Profile | null>(initialProfile)
 
-    // If we have initialProfile there is nothing to load; if we have a user
-    // but no profile we may need to fetch one, so start in loading state.
-    const [loading, setLoading] = useState(!initialProfile && initialUser !== null)
+    // Start loading=true whenever we have no profile yet — covers both:
+    //   a) server-seeded user with no profile (original behaviour)
+    //   b) no seed at all — we must wait for INITIAL_SESSION to resolve
+    const [loading, setLoading] = useState(initialProfile === null)
 
     // Refs used inside the effect closure so we never capture stale state
     const userRef = useRef<User | null>(initialUser)
@@ -62,14 +64,12 @@ export function UserProvider({
                     .eq('id', userId)
                     .single()
 
-                // 1. Silent AbortError guard — network cancellation is harmless
                 if (error?.name === 'AbortError') return
-
                 if (!mounted) return
 
                 setProfile(error ? null : data)
-            } catch (err: any) {
-                if (err?.name === 'AbortError') return
+            } catch (err: unknown) {
+                if (err instanceof Error && err.name === 'AbortError') return
             } finally {
                 if (mounted) setLoading(false)
             }
@@ -90,13 +90,30 @@ export function UserProvider({
                 return
             }
 
-            if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
-                // 2. Dedup guard — skip if it's the same user (e.g. token refresh)
-                if (session?.user?.id && session.user.id === userRef.current?.id) return
+            // INITIAL_SESSION fires on page load with the current session.
+            // SIGNED_IN fires after login. TOKEN_REFRESHED / USER_UPDATED
+            // fire on token rotation and profile updates respectively.
+            if (
+                event === 'INITIAL_SESSION' ||
+                event === 'SIGNED_IN' ||
+                event === 'USER_UPDATED' ||
+                event === 'TOKEN_REFRESHED'
+            ) {
+                // No session means logged-out user — clear state and stop loading
+                if (!session?.user) {
+                    userRef.current = null
+                    setUser(null)
+                    setProfile(null)
+                    setLoading(false)
+                    return
+                }
+
+                // Dedup guard — skip if same user (e.g. token refresh)
+                if (session.user.id === userRef.current?.id && profile !== null) return
 
                 setLoading(true)
 
-                // Use getUser() — does NOT acquire the lock that triggers AbortError
+                // getUser() validates the token server-side
                 const { data: { user: freshUser }, error } = await supabase.auth.getUser()
 
                 if (error?.name === 'AbortError' || !mounted) return
@@ -118,28 +135,24 @@ export function UserProvider({
         // ── Subscribe to auth changes with 50ms debounce ────────────────────
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
-                // Clear any pending debounce before scheduling a new one
                 if (debounceRef.current) clearTimeout(debounceRef.current)
-
                 debounceRef.current = setTimeout(() => {
                     handleAuthChange(event, session)
                 }, 50)
-            }
+            },
         )
 
-        // ── If no initialProfile but we have a user, fetch profile once ──────
-        if (!initialProfile && initialUser) {
+        // ── If server-seeded user exists but no profile, fetch it once ───────
+        if (initialUser && !initialProfile) {
             fetchProfile(initialUser.id)
         }
 
-        // ── Cleanup: cancel debounce timer + unsubscribe ─────────────────────
         return () => {
             mounted = false
             if (debounceRef.current) clearTimeout(debounceRef.current)
             subscription.unsubscribe()
         }
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
-    // Empty deps: we use refs for mutable values and only subscribe once.
 
     return (
         <UserContext.Provider

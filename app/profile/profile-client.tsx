@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { User, MapPin, Package, LogOut, Mail, Edit2 } from "lucide-react"
 import { useState } from "react"
-import { logout } from "@/app/auth/actions"
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import { AddressesSection } from "@/components/addresses-section"
 import type { Address } from "@/types/address"
 import Link from "next/link"
@@ -22,6 +23,13 @@ const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
 
 export default function ProfileClient({ profile, addresses }: ProfileClientProps) {
     const [activeTab, setActiveTab] = useState<TabKey>("profile")
+    const router = useRouter()
+    const supabase = createClient()
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut()
+        router.push('/')
+    }
 
     return (
         <div className="min-h-screen max-w-7xl mx-auto bg-background">
@@ -51,7 +59,7 @@ export default function ProfileClient({ profile, addresses }: ProfileClientProps
                         <Button
                             variant="ghost"
                             className="rounded-full font-body text-sm gap-2 text-secondary hover:text-secondary"
-                            onClick={() => logout()}
+                            onClick={handleSignOut}
                         >
                             <LogOut className="w-4 h-4" /> Logout
                         </Button>

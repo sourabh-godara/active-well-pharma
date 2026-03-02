@@ -7,7 +7,8 @@ import {
     Users, Megaphone, Presentation, Ticket
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { logout } from '@/app/auth/actions'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -25,6 +26,13 @@ const navigation = [
 // Pure sidebar content — no positioning, no fixed/absolute
 export function AdminSidebarContent() {
     const pathname = usePathname()
+    const router = useRouter()
+    const supabase = createClient()
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut()
+        router.push('/')
+    }
 
     return (
         <div className="flex h-full flex-col bg-white">
@@ -67,7 +75,7 @@ export function AdminSidebarContent() {
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start gap-3 text-muted-foreground hover:text-red-600 hover:bg-red-50"
-                    onClick={() => logout()}
+                    onClick={handleSignOut}
                 >
                     <LogOut className="h-4 w-4" />
                     Sign out

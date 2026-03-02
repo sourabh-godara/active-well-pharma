@@ -1,8 +1,14 @@
-
+// app/layout.tsx
+// No cookies() — no server auth — layout is now fully static.
+// UserProvider hydrates auth entirely client-side via onAuthStateChange.
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'sonner'
+import { CartProvider } from './context/cart-context'
+import { ConditionalNavbar } from '@/components/conditional-navbar'
+import { UserProvider } from './context/user-context'
+import { ClientErrorBoundary } from '@/components/error-boundaries'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -11,39 +17,19 @@ export const metadata: Metadata = {
   description: 'Activewell Pharma delivers innovative, easy-to-use nutraceutical solutions that support immunity, energy, and everyday wellness.',
 }
 
-import { cookies } from 'next/headers'
-import { createClient } from '@/lib/supabase/server'
-
-import { CartProvider } from './context/cart-context'
-import { ConditionalNavbar } from '@/components/conditional-navbar'
-import { UserProvider } from './context/user-context'
-import { ClientErrorBoundary } from '@/components/error-boundaries'
-
-export default async function RootLayout({
+// Synchronous — no async, no cookies(), no DB calls
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
-
-  const { data: { user } } = await supabase.auth.getUser()
-
-  let profile = null
-  if (user) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-    profile = data
-  }
-
   return (
     <html lang="en">
       <body className={inter.className}>
         <ClientErrorBoundary>
-          <UserProvider initialUser={user} initialProfile={profile}>
+          {/* initialUser and initialProfile omitted — both default to null.
+              UserProvider resolves auth client-side via onAuthStateChange. */}
+          <UserProvider>
             <CartProvider>
               <ConditionalNavbar />
               {children}
