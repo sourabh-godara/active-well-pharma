@@ -1,3 +1,0 @@
-﻿app/layout.tsx(17,37): error TS2307: Cannot find module '@/components/client-error-boundary' or its corresponding type declarations.
-app/test-error/page.tsx(4,31): error TS2307: Cannot find module '@/components/error-boundary' or its corresponding type declarations.
-app/test-error/page.tsx(5,38): error TS2307: Cannot find module '@/components/error-fallback' or its corresponding type declarations.
