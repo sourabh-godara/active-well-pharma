@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Instagram, Facebook, Twitter, Youtube } from "lucide-react";
+import { Instagram, Facebook, Twitter, Youtube, MapPin } from "lucide-react";
 import Link from "next/link";
 
 const SocialMedia = [
@@ -77,7 +77,16 @@ const Footer = () => {
                                 </Link>
                             ))}
                         </div>
-
+                        <h3 className="font-display text-lg font-semibold mb-4 text-background/90">Address</h3>
+                        <div className="flex items-start gap-3">
+                            <MapPin className="w-5 h-5 text-background/60 shrink-0 mt-0.5" />
+                            <address className="font-body text-sm text-background/60 not-italic leading-relaxed">
+                                <strong>Activewell Pharma</strong><br />
+                                Saili Kullian, Near Kabir Mandir<br />
+                                Pathankot, Tehsil Distt. Pathankot<br />
+                                Punjab 145001, India
+                            </address>
+                        </div>
                     </div>
                 </div>
 
