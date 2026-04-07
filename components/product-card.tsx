@@ -32,7 +32,11 @@ export function ProductCard({ product }: ProductCardProps) {
                     unoptimized
                 />
 
-                <Button className="absolute top-3 right-3 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background">
+                <div className="absolute top-3 right-3 bg-background/90 backdrop-blur-sm text-foreground text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider z-10 shadow-sm pointer-events-none">
+                    Coming Soon
+                </div>
+
+                <Button className="absolute bottom-3 right-3 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background z-20">
                     <ShoppingBag className="w-4 h-4 text-foreground" />
                 </Button>
             </div>

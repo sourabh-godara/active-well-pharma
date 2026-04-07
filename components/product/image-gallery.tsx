@@ -24,7 +24,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     return (
         <div className="flex flex-col gap-4">
             {/* Main Image */}
-            <div className="w-full rounded-2xl overflow-hidden border border-border bg-white">
+            <div className="relative w-full rounded-2xl overflow-hidden border border-border bg-white">
                 <AspectRatio ratio={1}>
                     <Image
                         src={selectedImage}
@@ -36,6 +36,10 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                         sizes="(max-width: 768px) 100vw, 50vw"
                     />
                 </AspectRatio>
+
+                <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm text-foreground text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded uppercase tracking-wider z-10 shadow-sm pointer-events-none">
+                    Coming Soon
+                </div>
             </div>
 
             {/* Thumbnails */}
