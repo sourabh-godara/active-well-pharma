@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Instagram, Facebook, Twitter, Youtube, MapPin } from "lucide-react";
+import { Instagram, Facebook, Twitter, Youtube, MapPin, Mail } from "lucide-react";
 import Link from "next/link";
 
 const SocialMedia = [
@@ -90,13 +90,20 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <div className="border-t border-background/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="border-t border-background/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
                     <a href="/" className="font-display text-2xl font-bold">
                         ActiveWell<span className="text-secondary">Pharma</span>
                     </a>
-                    <p className="font-body text-xs text-background/40">
-                        © 2026 ActiveWell Pharma. All rights reserved.
-                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
+                        <a href="mailto:info@activewellpharma.com" className="flex items-center gap-2 font-body text-sm text-background/60 hover:text-background transition-colors">
+                            <Mail className="w-4 h-4" />
+                            info@activewellpharma.com
+                        </a>
+                        <p className="font-body text-xs text-background/40">
+                            © 2026 ActiveWell Pharma. All rights reserved.
+                        </p>
+                    </div>
                 </div>
             </div>
         </footer>
