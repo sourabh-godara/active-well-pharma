@@ -1,58 +1,116 @@
-import { Droplets, FlaskConical, Recycle, Award } from "lucide-react";
+import { Droplets, FlaskConical, Recycle, Award, Truck, Lock } from 'lucide-react'
 
-const benefits = [
-    {
-        icon: Droplets,
-        title: "100% Plant-Based",
-        description: "Every ingredient sourced from nature's finest superfoods",
-    },
-    {
-        icon: FlaskConical,
-        title: "Clinically Proven",
-        description: "Backed by science with visible results in 4-6 weeks",
-    },
-    {
-        icon: Recycle,
-        title: "Eco-Friendly",
-        description: "Sustainable packaging that loves the planet as much as you",
-    },
-    {
-        icon: Award,
-        title: "Award Winning",
-        description: "Recognized by top beauty & wellness publications",
-    },
-];
+const BENEFITS = [
+  {
+    icon: Droplets,
+    title: '100% Plant-Based',
+    description: 'Every ingredient is sourced from nature\'s finest superfoods — absolutely zero animal derivatives or synthetic fillers.',
+    accent: '#d8f0e8',
+    iconColor: '#215732',
+    colSpan: 'lg:col-span-2',
+    rowSpan: 'lg:row-span-1',
+  },
+  {
+    icon: FlaskConical,
+    title: 'Clinically Inspired',
+    description: 'Formulas developed with evidence-based research, targeting visible results.',
+    accent: '#e8f0fe',
+    iconColor: '#2563eb',
+    colSpan: 'lg:col-span-1',
+    rowSpan: 'lg:row-span-1',
+  },
+  {
+    icon: Recycle,
+    title: 'Eco-Friendly',
+    description: 'Sustainable packaging designed to minimise environmental impact at every step.',
+    accent: '#eaf6ee',
+    iconColor: '#2EB872',
+    colSpan: 'lg:col-span-1',
+    rowSpan: 'lg:row-span-1',
+  },
+  {
+    icon: Award,
+    title: 'Award Winning',
+    description: 'Recognised by leading wellness and beauty publications across India for excellence.',
+    accent: '#fef5d4',
+    iconColor: '#b8860b',
+    colSpan: 'lg:col-span-2',
+    rowSpan: 'lg:row-span-1',
+  },
+  {
+    icon: Truck,
+    title: 'Fast Shipping',
+    description: 'Orders dispatched within 24 hours. Free delivery on orders above ₹599.',
+    accent: '#fde8e2',
+    iconColor: '#e8614a',
+    colSpan: 'lg:col-span-2',
+    rowSpan: 'lg:row-span-1',
+  },
+  {
+    icon: Lock,
+    title: 'Secure Payment',
+    description: '100% safe checkout. We accept UPI, cards, net banking, and EMI options.',
+    accent: '#ecdff9',
+    iconColor: '#7c3aed',
+    colSpan: 'lg:col-span-1',
+    rowSpan: 'lg:row-span-1',
+  },
+] as const
 
-const Benefits = () => {
-    return (
-        <section className="section-padding bg-background">
-            <div className="container-brand">
-                <div className="text-center mb-14">
-                    <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
-                        Why Choose <span className="text-gradient-coral">ActiveWell</span>?
-                    </h2>
-                    <p className="font-body text-muted-foreground max-w-lg mx-auto">
-                        We're on a mission to make clean beauty accessible to everyone
-                    </p>
-                </div>
+export default function Benefits(): React.JSX.Element {
+  return (
+    <section
+      id="about"
+      className="py-24 lg:py-32 bg-surface px-4 sm:px-6 lg:px-8"
+      aria-labelledby="benefits-heading"
+    >
+      <div className="container-brand max-w-5xl">
+        {/* Header */}
+        <div className="text-center mb-16 lg:mb-20">
+          <h2
+            id="benefits-heading"
+            className="section-heading font-bold text-foreground mb-4"
+          >
+            Why Choose <span className="text-primary">ActiveWell</span>?
+          </h2>
+          <p className="text-muted-foreground text-[1.0625rem] max-w-xl mx-auto leading-relaxed">
+            We're on a mission to make clean, effective wellness accessible to everyone. Here's what sets us apart.
+          </p>
+        </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {benefits.map((item, i) => (
-                        <div
-                            key={item.title}
-                            className="text-center p-6 rounded-2xl bg-muted/50 hover:bg-muted transition-colors duration-300"
-                        >
-                            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-fresh flex items-center justify-center">
-                                <item.icon className="w-7 h-7 text-primary-foreground" />
-                            </div>
-                            <h3 className="font-display text-lg font-semibold text-foreground mb-2">{item.title}</h3>
-                            <p className="font-body text-sm text-muted-foreground leading-relaxed">{item.description}</p>
-                        </div>
-                    ))}
-                </div>
+        {/* Benefits bento grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+          {BENEFITS.map((item) => (
+            <div
+              key={item.title}
+              className={`group flex flex-col justify-between p-8 bg-white rounded-3xl border border-border/50 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all duration-500 ease-out ${item.colSpan}`}
+            >
+              {/* Icon tile */}
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 mb-6 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500 ease-out"
+                style={{ backgroundColor: item.accent }}
+              >
+                <item.icon
+                  className="w-6 h-6"
+                  style={{ color: item.iconColor }}
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+              </div>
+
+              {/* Text */}
+              <div>
+                <h3 className="font-bold text-foreground text-lg mb-2 tracking-tight">
+                  {item.title}
+                </h3>
+                <p className="text-[15px] text-muted-foreground leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
             </div>
-        </section>
-    );
-};
-
-export default Benefits;
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

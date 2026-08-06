@@ -7,7 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-surface: var(--surface);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -49,47 +50,70 @@
 
 :root {
   --radius: 0.625rem;
+
+  /* ── Backgrounds ── */
   --background: oklch(1 0 0);
-  --foreground: oklch(25.89% 0.00936 145.444);
+  --foreground: oklch(0.18 0.02 148);
+  --surface: oklch(0.98 0.004 140);
+
+  /* ── Cards / Popovers ── */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.18 0.02 148);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.18 0.02 148);
 
-  --primary: oklch(39.796% 0.08046 150.014);
+  /* ── Brand Colors ── */
+  /* Primary: #215732 — deep forest green */
+  --primary: oklch(0.338 0.095 149);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.612 0.209 6);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.965 0.007 140);
-  --muted-foreground: oklch(0.573 0.029 175);
-  --accent: oklch(0.737 0.164 59);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
 
-  --coral: 5 85% 65%;
-  --mint: 160 50% 90%;
-  --lavender: 270 60% 85%;
+  /* Secondary: #2EB872 — vibrant mid green */
+  --secondary: oklch(0.672 0.149 153);
+  --secondary-foreground: oklch(1 0 0);
+
+  /* Accent: #F26D5B — warm coral */
+  --accent: oklch(0.654 0.162 26);
+  --accent-foreground: oklch(1 0 0);
+
+  /* ── UI Surfaces ── */
+  --muted: oklch(0.97 0.005 140);
+  --muted-foreground: oklch(0.52 0.03 155);
+  --border: oklch(0.91 0.006 140);
+  --input: oklch(0.91 0.006 140);
+  --ring: oklch(0.338 0.095 149);
+
+  /* ── Semantic ── */
+  --destructive: oklch(0.577 0.245 27.325);
+
+  /* ── Brand Palette (HSL convenience vars) ── */
   --sunshine: 45 95% 60%;
   --peach: 20 90% 88%;
 
-  --gradient-hero: linear-gradient(135deg, hsl(160 50% 90%), hsl(140 40% 85%), hsl(45 95% 92%));
-  --gradient-coral: linear-gradient(135deg, hsl(340 75% 55%), hsl(5 85% 65%));
-  --gradient-fresh: linear-gradient(135deg, hsl(145 65% 42%), hsl(160 50% 55%));
+  /* ── Gradients ── */
+  --gradient-hero: radial-gradient(ellipse at 80% 10%, #2d6b44 0%, transparent 55%),
+                   radial-gradient(ellipse at 20% 90%, #0e2e1b 0%, transparent 45%),
+                   #1a4a2e;
+  --gradient-fresh: linear-gradient(135deg, #215732 0%, #2EB872 100%);
+  --gradient-coral: linear-gradient(135deg, #e8614a 0%, #F26D5B 100%);
+  --gradient-subtle: linear-gradient(135deg, #F8FAF7 0%, #e8f5ef 100%);
 
-  --shadow-product: 0 8px 30px -8px hsl(145 65% 42% / 0.2);
-  --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.08);
-  --shadow-hover: 0 12px 40px -8px hsl(0 0% 0% / 0.15);
+  /* ── Shadows (editorial, not heavy) ── */
+  --shadow-product: 0 8px 24px -8px rgba(33, 87, 50, 0.15);
+  --shadow-card: 0 1px 4px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
 
-  --font-display: 'Playfair Display', serif;
-  --font-body: 'Poppins', sans-serif;
+  /* ── Typography ── */
+  --font-display: var(--font-jakarta), system-ui, sans-serif;
+  --font-body: var(--font-jakarta), system-ui, sans-serif;
+
+  /* ── Charts ── */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+
+  /* ── Sidebar ── */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -108,20 +132,70 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar for filter chip rows */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 
 @layer components {
+  /* ── Layout Helpers ── */
   .section-padding {
-    @apply px-4 sm:px-6 lg:px-8 py-16 md:py-24;
+    @apply px-4 sm:px-6 lg:px-8;
+    padding-top: 80px;
+    padding-bottom: 80px;
   }
 
   .container-brand {
     @apply max-w-7xl mx-auto;
   }
+
+  /* ── Typography Scale ── */
+  /* Section H2: 36px mobile → 42px sm+ (user spec: 36–42px) */
+  .section-heading {
+    font-size: 2.25rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  @media (min-width: 640px) {
+    .section-heading {
+      font-size: 2.625rem;
+    }
+  }
+
+  /* ── Testimonials (WCAG AA: #333333) ── */
+  .testimonial-card p {
+    color: #333333;
+  }
+
+  /* ── Footer Lists (line-height 2.0) ── */
+  .footer-list li {
+    line-height: 2.0;
+  }
+
+  /* ── Social Links (12px gap) ── */
+  .social-links {
+    display: flex;
+    gap: 12px;
+  }
 }
 
 @layer utilities {
+  /* ── Text Gradients ── */
   .text-gradient-coral {
     background: var(--gradient-coral);
     -webkit-background-clip: text;
@@ -136,6 +210,7 @@
     background-clip: text;
   }
 
+  /* ── Background Gradients ── */
   .bg-gradient-hero {
     background: var(--gradient-hero);
   }
@@ -148,6 +223,7 @@
     background: var(--gradient-fresh);
   }
 
+  /* ── Shadows ── */
   .shadow-product {
     box-shadow: var(--shadow-product);
   }

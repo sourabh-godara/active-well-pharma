@@ -10,8 +10,6 @@ import { ProductWithGallery } from '@/types'
 import { createProduct, updateProduct } from '@/app/admin/products/actions'
 import { deleteProductImage } from '@/lib/actions/product-images.actions'
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 interface GalleryPreview {
     id: string
     url: string
@@ -28,7 +26,6 @@ export interface ProductFormProps {
     product?: ProductWithGallery
 }
 
-// ─── Submit Button ───────────────────────────────────────────────────────────
 
 function SubmitButton({ isCreate }: { isCreate: boolean }) {
     const { pending } = useFormStatus()
@@ -44,12 +41,10 @@ function SubmitButton({ isCreate }: { isCreate: boolean }) {
     )
 }
 
-// ─── Shared input class ───────────────────────────────────────────────────────
 
 const inputCls =
     'block w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500'
 
-// ─── Section divider ──────────────────────────────────────────────────────────
 
 function SectionDivider({ title, description }: { title: string; description?: string }) {
     return (
@@ -60,7 +55,6 @@ function SectionDivider({ title, description }: { title: string; description?: s
     )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProductForm({ product }: ProductFormProps) {
     const isCreate = !product
@@ -71,26 +65,24 @@ export default function ProductForm({ product }: ProductFormProps) {
         initialState
     )
 
-    // Gallery
     const [gallery, setGallery] = useState<GalleryPreview[]>(() =>
         (product?.images ?? []).map(img => ({ id: img.id, url: img.image_url, isExisting: true }))
     )
+    const galleryRef = useRef<GalleryPreview[]>(gallery)
+    galleryRef.current = gallery
     const galleryInputRef = useRef<HTMLInputElement>(null)
 
-    // Benefits
     const [benefits, setBenefits] = useState<BenefitItem[]>(() =>
         (product?.benefits ?? []).map(b => ({ id: b.id, text: b.benefit_text }))
     )
     const [benefitInput, setBenefitInput] = useState('')
 
-    // Toast
     useEffect(() => {
         if ((state as any).message === 'INITIAL_STATE') return
         if (!state.success) toast.error((state as any).error?.message ?? 'Something went wrong')
         else if (!isCreate) toast.success('Product updated!')
     }, [state, isCreate])
 
-    // Gallery handlers
     const handleGalleryFiles = useCallback((files: FileList | null) => {
         if (!files) return
         const remaining = 5 - gallery.length
@@ -116,7 +108,6 @@ export default function ProductForm({ product }: ProductFormProps) {
         }
     }, [product])
 
-    // Benefit handlers
     const addBenefit = () => {
         const text = benefitInput.trim()
         if (!text) return
@@ -126,8 +117,23 @@ export default function ProductForm({ product }: ProductFormProps) {
         setBenefitInput('')
     }
 
+    // Wrap the server action to inject gallery files from React state
+    // into FormData — the native file input only holds the last batch
+    const wrappedAction = useCallback(
+        (formData: FormData) => {
+            formData.delete('gallery_images')
+            for (const item of galleryRef.current) {
+                if (!item.isExisting && item.file) {
+                    formData.append('gallery_images', item.file)
+                }
+            }
+            return formAction(formData)
+        },
+        [formAction]
+    )
+
     return (
-        <form action={formAction}>
+        <form action={wrappedAction}>
             {/* Hidden fields */}
             {product && <input type="hidden" name="id" value={product.id} />}
             <input type="hidden" name="benefits" value={JSON.stringify(benefits.map(b => b.text))} />
@@ -238,8 +244,8 @@ export default function ProductForm({ product }: ProductFormProps) {
 
                     {gallery.length < 5 && (
                         <>
-                            <input ref={galleryInputRef} type="file" name="gallery_images" accept="image/*" multiple className="hidden"
-                                onChange={e => handleGalleryFiles(e.target.files)} />
+                            <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden"
+                                onChange={e => { handleGalleryFiles(e.target.files); e.target.value = '' }} />
                             <button type="button" onClick={() => galleryInputRef.current?.click()}
                                 className="flex items-center gap-2 w-full justify-center rounded-md border border-dashed border-gray-300 px-4 py-2.5 text-sm text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
                                 <ImagePlus className="h-4 w-4" />

@@ -1,63 +1,74 @@
 import Hero from '@/components/hero'
-import { ProductCard } from '@/components/product-card'
-import { getActivePromotion } from '@/lib/actions/promotion.actions'
 import { PromotionModal } from '@/components/promotion-modal'
 import NavbarMobile from '@/components/navbar-mobile'
-import { getProductsWithRating } from '@/lib/data/products.data'
-import { getBanners } from '@/lib/data/banners.data'
+import { TrustStrip } from '@/components/trust-strip'
 import Categories from '@/components/categories'
-import Testimonials from '@/components/testimonials'
-import Footer from '@/components/footer'
-import { Button } from '@/components/ui/button'
+import BestSellers from '@/components/best-sellers'
+import FeaturedCollections from '@/components/featured-collections'
+import FeaturedBundle from '@/components/featured-bundle'
 import Benefits from '@/components/benefits'
+import HowItWorks from '@/components/how-it-works'
+import ScienceCertifications from '@/components/science-certifications'
+import Ingredients from '@/components/ingredients'
+import Testimonials from '@/components/testimonials'
+import CustomerMoments from '@/components/customer-moments'
+import BlogSection from '@/components/blog-section'
+import Footer from '@/components/footer'
+import { getActivePromotion } from '@/lib/actions/promotion.actions'
 
 export const revalidate = 60 // Revalidate every 60 seconds
 
-export default async function Home() {
-  const products = await getProductsWithRating()
+export const metadata = {
+  title: 'ActiveWell Pharma — Premium Plant-Based Wellness',
+  description:
+    'Shop clinically-inspired, 100% plant-based supplements for radiant skin, healthy hair, and total wellness. FSSAI approved, GMP certified. Free shipping above ₹599.',
+}
 
-  const banners = await getBanners()
-
+export default async function Home(): Promise<React.JSX.Element> {
   const activePromotion = await getActivePromotion()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
+      {/* Promotion modal (server-fetched, client-rendered) */}
       <PromotionModal promotion={activePromotion} />
+
+
       <Hero />
+
+
+      <TrustStrip />
+
+
       <Categories />
 
-      <main className="section-padding container-brand  mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-        <div className="flex items-end justify-between mb-14">
-          <div>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
-              Our <span className="text-gradient-fresh">Bestsellers</span>
-            </h2>
-            <p className="font-body text-muted-foreground">
-              Loved by 10 lakh+ happy customers
-            </p>
-          </div>
-          <Button variant="outline" className="hidden sm:flex rounded-full font-body">
-            View All →
-          </Button>
-        </div>
+      {/* Async server component — fetches own data */}
+      <BestSellers />
 
-        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-          {products?.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+      {/*      <FeaturedCollections /> */}
 
-        {products?.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-gray-500 text-lg">No products found. Admin needs to add products.</p>
-          </div>
-        )}
-      </main>
+
+      <FeaturedBundle />
+
+
       <Benefits />
 
+
+      <HowItWorks />
+
+
+      <ScienceCertifications />
+
+      <Ingredients />
+
       <Testimonials />
+
+      <CustomerMoments />
+
+      <BlogSection />
+
       <Footer />
 
+      <div className="h-16 lg:hidden" aria-hidden="true" />
     </div>
   )
 }

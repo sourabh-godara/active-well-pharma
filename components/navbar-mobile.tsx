@@ -1,30 +1,63 @@
 'use client'
-import { Home, ShoppingCart, User, LogIn } from 'lucide-react'
+
+import { Home, ShoppingCart, User, LogIn, Search } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useUser } from '@/app/context/user-context'
 
-export default function NavbarMobile() {
-    const { profile } = useUser()
+const TABS = [
+  { icon: Home, label: 'Home', href: '/' },
+  { icon: Search, label: 'Search', href: '/shop' },
+  { icon: ShoppingCart, label: 'Cart', href: '/cart' },
+] as const
 
-    return (
-        <div className='lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50'>
-            <div className='flex justify-between mx-6 items-center h-16 px-4'>
-                <Link href="/" className='flex items-center gap-2'>
-                    <Home className='h-6 w-6 text-gray-500 hover:text-gray-900' />
-                </Link>
-                <Link href="/cart" className='flex items-center gap-2'>
-                    <ShoppingCart className='h-6 w-6 text-gray-500 hover:text-gray-900' />
-                </Link>
-                {profile ? (
-                    <Link href="/profile" className='flex items-center gap-2'>
-                        <User className='h-6 w-6 text-gray-500 hover:text-gray-900' />
-                    </Link>
-                ) : (
-                    <Link href="/auth/login" className='flex items-center gap-2'>
-                        <LogIn className='h-6 w-6 text-gray-500 hover:text-gray-900' />
-                    </Link>
-                )}
-            </div>
-        </div>
-    )
+export default function NavbarMobile(): React.JSX.Element {
+  const { profile } = useUser()
+  const pathname = usePathname()
+
+  return (
+    <nav
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border z-50 safe-area-inset-bottom"
+      aria-label="Mobile bottom navigation"
+    >
+      <div className="flex items-center justify-around h-16 px-2">
+        {TABS.map(({ icon: Icon, label, href }) => {
+          const isActive = pathname === href
+          return (
+            <Link
+              key={label}
+              href={href}
+              className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-colors duration-200 ${
+                isActive ? 'text-primary' : 'text-foreground/50 hover:text-foreground/80'
+              }`}
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <Icon
+                className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}
+                aria-hidden="true"
+              />
+              <span className="text-[10px] font-semibold tracking-wide">{label}</span>
+            </Link>
+          )
+        })}
+
+        {/* Account tab */}
+        <Link
+          href={profile ? '/profile' : '/auth/login'}
+          className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-colors duration-200 ${
+            pathname === '/profile' ? 'text-primary' : 'text-foreground/50 hover:text-foreground/80'
+          }`}
+          aria-label={profile ? 'Account' : 'Log in'}
+        >
+          {profile
+            ? <User className="w-5 h-5" aria-hidden="true" />
+            : <LogIn className="w-5 h-5" aria-hidden="true" />}
+          <span className="text-[10px] font-semibold tracking-wide">
+            {profile ? 'Account' : 'Login'}
+          </span>
+        </Link>
+      </div>
+    </nav>
+  )
 }

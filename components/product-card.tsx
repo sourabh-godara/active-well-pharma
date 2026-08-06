@@ -1,62 +1,134 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
-import { StarRating } from '@/components/reviews/star-rating'
-import { Product } from '@/types'
-import { ShoppingBag, Star } from 'lucide-react'
+import { Heart, Star, ShoppingBag } from 'lucide-react'
 import { Button } from './ui/button'
+import { Product } from '@/types'
+import { useState } from 'react'
 
-interface ProductWithRating extends Product {
-    average_rating: number
-    total_reviews: number
+export interface ProductWithRating extends Product {
+  average_rating: number
+  total_reviews: number
 }
 
 interface ProductCardProps {
-    product: ProductWithRating
+  product: ProductWithRating
 }
 
-export function ProductCard({ product }: ProductCardProps) {
-    return (
-        <Link
-            href={`/product/${product.id}`}
-            key={product.name}
-            className="group bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-300 hover:-translate-y-2"
+// Generic benefit text per category — no % claims
+const BENEFIT_TEXT = 'Supports Daily Wellness'
+
+export function ProductCard({ product }: ProductCardProps): React.JSX.Element {
+  const [wishlisted, setWishlisted] = useState(false)
+
+  const originalPrice = product.price + 300
+  const savings = originalPrice - product.price
+  const discountPct = Math.round((savings / originalPrice) * 100)
+
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setWishlisted(prev => !prev)
+  }
+
+  return (
+    <Link
+      href={`/product/${product.id}`}
+      className="group relative flex flex-col bg-white rounded-2xl border border-border/40 hover:border-transparent transition-all duration-500 overflow-hidden"
+      style={{
+        boxShadow: '0 2px 8px -2px rgba(0, 0, 0, 0.02)',
+      }}
+      aria-label={`${product.name} — ₹${product.price}`}
+    >
+      {/* Subtle hover shadow via pseudo-element for smoother transition */}
+      <div 
+        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{
+          boxShadow: '0 12px 40px -8px rgba(0, 0, 0, 0.08)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Image container */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-[#f4f7f5] rounded-t-2xl z-10">
+        <Image
+          src={product.image_url!}
+          alt={product.name}
+          fill
+          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105 mix-blend-multiply"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          unoptimized
+        />
+
+        {/* Discount badge — top left */}
+        <div
+          className="absolute top-4 left-4 px-2.5 py-1 bg-accent text-white text-[10px] font-bold rounded uppercase tracking-[0.1em] shadow-sm"
+          aria-label={`${discountPct}% off`}
         >
-            {/* Image */}
-            <div className="relative aspect-square overflow-hidden bg-muted">
-                <Image
-                    src={product.image_url!}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                    unoptimized
-                />
+          -{discountPct}%
+        </div>
 
-                <div className="absolute top-3 right-3 bg-background/90 backdrop-blur-sm text-foreground text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider z-10 shadow-sm pointer-events-none">
-                    Coming Soon
-                </div>
+        {/* Wishlist button — top right, always visible */}
+        <button
+          onClick={handleWishlist}
+          aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          aria-pressed={wishlisted}
+          className="absolute top-4 right-4 w-9 h-9 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:bg-white hover:scale-105 transition-all duration-300 ease-out"
+        >
+          <Heart
+            className={`w-[16px] h-[16px] transition-colors duration-300 ${
+              wishlisted ? 'fill-accent text-accent' : 'text-foreground/40 hover:text-accent'
+            }`}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
 
-                <Button className="absolute bottom-3 right-3 w-9 h-9 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-background z-20">
-                    <ShoppingBag className="w-4 h-4 text-foreground" />
-                </Button>
-            </div>
+      {/* Card body */}
+      <div className="flex flex-col flex-1 p-5 lg:p-6 z-10 bg-white rounded-b-2xl">
+        {/* Category & Rating Row */}
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] font-semibold">
+            Skin Glow
+          </p>
+          <div className="flex items-center gap-1">
+            <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" aria-hidden="true" />
+            <span className="text-[11px] font-semibold text-foreground/80">{product.average_rating.toFixed(1)}</span>
+          </div>
+        </div>
 
-            {/* Info */}
-            <div className="p-4">
-                <p className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1">{'SKIN GLOW'}</p>
-                <h3 className="font-display text-sm sm:text-base font-mono font-semibold text-foreground mb-2 line-clamp-1">{product.name}</h3>
-                <div className="flex items-center gap-1.5 mb-3">
-                    <div className="flex items-center gap-0.5">
-                        <Star color='orange' fill='orange' className="w-3.5 h-3.5 text-sunshine" />
-                        <span className="font-body text-xs font-semibold text-foreground">{product.average_rating}</span>
-                    </div>
-                    <span className="font-body text-xs text-muted-foreground">({product.total_reviews})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="font-body text-base font-bold text-foreground">₹{product.price}</span>
-                    <span className="font-body text-sm text-muted-foreground line-through">₹{product.price + 300}</span>
-                </div>
-            </div>
-        </Link>
-    )
+        {/* Product name */}
+        <h3 className="font-semibold text-foreground text-base leading-tight mb-2 line-clamp-2">
+          {product.name}
+        </h3>
+
+        {/* Benefit text */}
+        <p className="text-[13px] text-muted-foreground mb-6 leading-relaxed">
+          {BENEFIT_TEXT}
+        </p>
+
+        {/* Spacer to push price+button to bottom */}
+        <div className="flex-1" />
+
+        {/* Price row */}
+        <div className="flex flex-col gap-1 mb-5">
+          <div className="flex items-baseline gap-2">
+            <span className="text-lg font-bold text-foreground tracking-tight">₹{product.price}</span>
+            <span className="text-sm text-muted-foreground/60 line-through decoration-muted-foreground/30">₹{originalPrice}</span>
+          </div>
+          <span className="text-[11px] font-semibold text-secondary tracking-wide uppercase">Save ₹{savings}</span>
+        </div>
+
+        {/* Add to Cart — always visible */}
+        <Button
+          className="w-full rounded-xl h-11 text-[14px] font-semibold bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+          onClick={(e: React.MouseEvent) => e.preventDefault()} // Product page handles cart
+          aria-label={`Add ${product.name} to cart`}
+        >
+          Add to Cart
+        </Button>
+      </div>
+    </Link>
+  )
 }

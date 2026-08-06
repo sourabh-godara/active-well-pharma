@@ -11,7 +11,6 @@ import { getProductReviews, getCachedProductRating } from '@/lib/actions/reviews
 import { StarRating } from '@/components/reviews/star-rating'
 import { ImageGallery } from '@/components/product/image-gallery'
 import { ProductInfo } from '@/components/product/product-info'
-import { ProductTabs } from '@/components/product/product-tabs'
 import { ProductCard } from '@/components/product-card'
 import { ReviewGate } from './review-gate'
 import { ReviewListClient } from '@/components/reviews/review-list-client'
@@ -76,9 +75,23 @@ export default async function ProductPage({
                     />
                 </div>
 
-                {/* ── Tabs (Description / Ingredients / Reviews) ── */}
-                <ProductTabs description={product.description} ingredients={null}>
-                    <div className="mt-8 lg:grid lg:grid-cols-12 lg:gap-x-8">
+                {/* ── Description ── */}
+                <section className="mt-16 border-t border-border pt-10">
+                    <h3 className="font-display text-xl sm:text-2xl font-bold text-foreground mb-4">
+                        Description
+                    </h3>
+                    <div className="prose prose-sm max-w-none font-body text-muted-foreground leading-relaxed">
+                        <p>{product.description ?? 'No description available.'}</p>
+                    </div>
+                </section>
+
+                {/* ── Ratings & Reviews ── */}
+                <section className="mt-20 border-t border-border pt-10">
+                    <h3 className="font-display text-xl sm:text-2xl font-bold text-foreground mb-8">
+                        Reviews
+                    </h3>
+
+                    <div className="lg:grid lg:grid-cols-12 lg:gap-x-8">
 
                         {/* Left — rating summary + review form */}
                         <div className="lg:col-span-4">
@@ -109,7 +122,7 @@ export default async function ProductPage({
                             />
                         </div>
                     </div>
-                </ProductTabs>
+                </section>
 
                 {/* ── You May Also Like ── */}
                 {relatedProducts.length > 0 && (
@@ -128,3 +141,4 @@ export default async function ProductPage({
         </div>
     )
 }
+

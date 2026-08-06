@@ -23,6 +23,7 @@ import {
 
 async function uploadGalleryImages(
     supabase: ReturnType<typeof createClient>,
+    adminSupabase: ReturnType<typeof createAdminClient>,
     productId: string,
     files: File[]
 ) {
@@ -35,10 +36,10 @@ async function uploadGalleryImages(
 
         const fileExt = file.name.split('.').pop()
         const fileName = `${crypto.randomUUID()}.${fileExt}`
-        const filePath = `products/${productId}/${fileName}`
+        const filePath = `gallery/${productId}/${fileName}`
 
         const { error: uploadError } = await supabase.storage
-            .from('products')
+            .from('image-storage')
             .upload(filePath, file)
 
         if (uploadError) {
@@ -47,10 +48,10 @@ async function uploadGalleryImages(
         }
 
         const { data: { publicUrl } } = supabase.storage
-            .from('products')
+            .from('image-storage')
             .getPublicUrl(filePath)
 
-        const { data: maxOrder } = await supabase
+        const { data: maxOrder } = await adminSupabase
             .from('product_images')
             .select('order_index')
             .eq('product_id', productId)
@@ -58,11 +59,15 @@ async function uploadGalleryImages(
             .limit(1)
             .single()
 
-        await supabase.from('product_images').insert({
+        const { error: insertError } = await adminSupabase.from('product_images').insert({
             product_id: productId,
             image_url: publicUrl,
             order_index: (maxOrder?.order_index ?? -1) + 1,
         })
+
+        if (insertError) {
+            console.error('Gallery DB insert failed:', insertError)
+        }
     }
 }
 
@@ -151,7 +156,7 @@ export async function createProduct(prevState: any, formData: FormData): Promise
         const galleryFiles = formData.getAll('gallery_images') as File[]
         const validGallery = galleryFiles.filter(f => f.size > 0)
         if (validGallery.length > 0) {
-            await uploadGalleryImages(supabase, data.id, validGallery.slice(0, 5))
+            await uploadGalleryImages(supabase, adminSupabase, data.id, validGallery.slice(0, 5))
         }
 
         revalidatePath('/admin/products')
@@ -285,7 +290,7 @@ export async function updateProduct(prevState: any, formData: FormData): Promise
         const galleryFiles = formData.getAll('gallery_images') as File[]
         const validGallery = galleryFiles.filter(f => f.size > 0)
         if (validGallery.length > 0) {
-            await uploadGalleryImages(supabase, id, validGallery.slice(0, 5))
+            await uploadGalleryImages(supabase, adminSupabase, id, validGallery.slice(0, 5))
         }
 
         revalidatePath('/admin/products')

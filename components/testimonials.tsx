@@ -1,41 +1,120 @@
-import { Star } from "lucide-react";
+import { CheckCircle2, Star } from 'lucide-react'
 
-const Testimonials = () => {
-    const reviews = [
-        { name: "Priya S.", text: "My skin has never looked better! The Green Detox Elixir is a game changer.", rating: 5, product: "Green Detox Elixir" },
-        { name: "Ananya R.", text: "I love that everything is plant-based. The Berry Collagen made my skin plump in just 3 weeks!", rating: 5, product: "Berry Collagen Boost" },
-        { name: "Meera K.", text: "Finally found supplements that actually work. My hair fall reduced by 60%!", rating: 5, product: "Acai Biotin Hair" },
-    ];
+const REVIEWS = [
+  {
+    name: 'Priya S.',
+    initials: 'PS',
+    location: 'Mumbai, MH',
+    rating: 5,
+    date: 'June 2026',
+    product: 'Active Fizz',
+    text: 'My immunity has never felt this strong. After three weeks, I noticed a real difference in my energy. The formula feels so clean and it\'s become a non-negotiable part of my morning.',
+  },
+  {
+    name: 'Ananya R.',
+    initials: 'AR',
+    location: 'Bangalore, KA',
+    rating: 5,
+    date: 'May 2026',
+    product: 'Active Fizz Plus',
+    text: 'I love that it\'s completely plant-based. My energy levels feel more sustained and I feel less prone to seasonal illnesses. Will definitely be reordering next month.',
+  },
+  {
+    name: 'Meera K.',
+    initials: 'MK',
+    location: 'Delhi, DL',
+    rating: 5,
+    date: 'July 2026',
+    product: 'Active Fizz Plus',
+    text: 'Started this after struggling with immunity for two years. Within a month my energy levels looked healthier and I felt stronger. Incredible results.',
+  },
+] as const
 
-    return (
-        <section className="section-padding bg-gradient-hero">
-            <div className="container-brand">
-                <div className="text-center mb-14">
-                    <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
-                        Real People, <span className="text-gradient-fresh">Real Results</span>
-                    </h2>
-                    <p className="font-body text-muted-foreground">Join our community of 10L+ glowing customers</p>
+const AVATAR_COLORS = [
+  { bg: '#d8f0e8', text: '#215732' },
+  { bg: '#ecdff9', text: '#7c3aed' },
+  { bg: '#fde8e2', text: '#e8614a' },
+] as const
+
+export default function Testimonials(): React.JSX.Element {
+  return (
+    <section
+      className="py-24 lg:py-32 bg-surface px-4 sm:px-6 lg:px-8"
+      aria-labelledby="testimonials-heading"
+    >
+      <div className="container-brand">
+        {/* Header */}
+        <div className="text-center mb-16 lg:mb-20">
+          <h2
+            id="testimonials-heading"
+            className="section-heading font-bold text-foreground mb-4"
+          >
+            Real People,{' '}
+            <span className="text-primary">Real Results</span>
+          </h2>
+          <p className="text-muted-foreground text-[1.0625rem] max-w-md mx-auto leading-relaxed">
+            Thousands of customers share their journey to healthier skin, hair, and everyday wellness.
+          </p>
+        </div>
+
+        {/* Review cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          {REVIEWS.map((review, i) => (
+            <article
+              key={review.name}
+              className="testimonial-card bg-white rounded-3xl p-8 lg:p-10 flex flex-col shadow-sm hover:shadow-md transition-shadow duration-300"
+              aria-label={`Review by ${review.name}`}
+            >
+              {/* Star rating */}
+              <div className="flex gap-1 mb-6" aria-label={`${review.rating} out of 5 stars`}>
+                {Array.from({ length: review.rating }).map((_, j) => (
+                  <Star
+                    key={j}
+                    className="w-5 h-5 fill-yellow-400 text-yellow-400"
+                    aria-hidden="true"
+                  />
+                ))}
+              </div>
+
+              {/* Quote */}
+              <blockquote className="flex-1 mb-8">
+                <p className="text-[17px] leading-relaxed text-[#333333] font-medium tracking-tight">
+                  &ldquo;{review.text}&rdquo;
+                </p>
+              </blockquote>
+
+              {/* Reviewer Meta */}
+              <div className="flex items-center gap-4 mt-auto">
+                {/* Initials avatar */}
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                  style={{
+                    backgroundColor: AVATAR_COLORS[i].bg,
+                    color: AVATAR_COLORS[i].text,
+                  }}
+                  aria-hidden="true"
+                >
+                  {review.initials}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {reviews.map((review, i) => (
-                        <div key={i} className="bg-card rounded-2xl p-8 shadow-card hover:shadow-hover transition-shadow duration-300">
-                            <div className="flex gap-1 mb-4">
-                                {Array.from({ length: review.rating }).map((_, j) => (
-                                    <Star key={j} color='orange' fill='orange' className="w-3.5 h-3.5 text-sunshine" />
-                                ))}
-                            </div>
-                            <p className="font-body text-foreground/80 mb-6 leading-relaxed">"{review.text}"</p>
-                            <div className="border-t border-border pt-4">
-                                <p className="font-body font-semibold text-foreground text-sm">{review.name}</p>
-                                <p className="font-body text-xs text-muted-foreground">Verified Buyer · {review.product}</p>
-                            </div>
-                        </div>
-                    ))}
+                {/* Name + meta */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <p className="font-bold text-foreground text-[15px] leading-none">{review.name}</p>
+                    <CheckCircle2
+                      className="w-4 h-4 text-secondary shrink-0"
+                      aria-label="Verified buyer"
+                    />
+                  </div>
+                  <p className="text-[13px] text-muted-foreground">
+                    {review.product}
+                  </p>
                 </div>
-            </div>
-        </section>
-    );
-};
-
-export default Testimonials;
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

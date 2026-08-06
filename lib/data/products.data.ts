@@ -122,7 +122,7 @@ export function getProductWithGallery(id: string): Promise<ProductWithGallery | 
                 { data: benefits, error: benefitsError },
             ] = await Promise.all([
                 supabase.from('products').select('*').eq('id', id).single(),
-                supabase
+                adminSupabase
                     .from('product_images')
                     .select('*')
                     .eq('product_id', id)

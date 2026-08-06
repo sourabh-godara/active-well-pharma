@@ -1,82 +1,97 @@
-import { Sparkles, Leaf, Heart, Sun } from "lucide-react";
+import { Sparkles, Leaf, Heart, Sun, ArrowRight } from 'lucide-react'
 
-const categories = [
-    {
-        icon: Sparkles,
-        title: "Skin Care",
-        description: "Glow-boosting formulas",
-        tileBg: "bg-[#fde8e2]",       // soft peach
-        iconColor: "text-[#e8614a]",   // coral/red
-    },
-    {
-        icon: Leaf,
-        title: "Hair Care",
-        description: "Plant-powered strength",
-        tileBg: "bg-[#d8f0e8]",        // soft mint
-        iconColor: "text-[#3aab76]",   // green
-    },
-    {
-        icon: Heart,
-        title: "Wellness",
-        description: "Inside-out health",
-        tileBg: "bg-[#ecdff9]",        // soft lavender
-        iconColor: "text-[#a259e6]",   // purple
-    },
-    {
-        icon: Sun,
-        title: "Weight Care",
-        description: "Natural metabolism boost",
-        tileBg: "bg-[#fef5d4]",        // soft yellow
-        iconColor: "text-[#d4a017]",   // golden
-    },
-];
+const CATEGORIES = [
+  {
+    icon: Sparkles,
+    title: 'Skin Care',
+    description: 'Glow-boosting formulas for radiant, healthy skin',
+    tileBg: '#fde8e2',
+    iconColor: '#e8614a',
+    href: '#',
+  },
+  {
+    icon: Leaf,
+    title: 'Hair Care',
+    description: 'Plant-powered strength from root to tip',
+    tileBg: '#d8f0e8',
+    iconColor: '#215732',
+    href: '#',
+  },
+  {
+    icon: Heart,
+    title: 'Wellness',
+    description: 'Inside-out health with daily supplements',
+    tileBg: '#ecdff9',
+    iconColor: '#7c3aed',
+    href: '#',
+  },
+  {
+    icon: Sun,
+    title: 'Weight Care',
+    description: 'Natural metabolism support, daily balance',
+    tileBg: '#fef5d4',
+    iconColor: '#b8860b',
+    href: '#',
+  },
+] as const
 
-const Categories = () => {
-    return (
-        <section className="py-28 px-8 bg-white">
-            <div className="max-w-5xl mx-auto">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <h2 className="font-display text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-                        Shop by{" "}
-                        <span className="text-[#e8614a]">Concern</span>
-                    </h2>
-                    <p className="text-gray-500 text-sm sm:text-base">
-                        Find the perfect plant-based solution for your unique needs
-                    </p>
-                </div>
+export default function Categories(): React.JSX.Element {
+  return (
+    <section
+      id="categories"
+      className="py-16 lg:py-24 bg-surface px-4 sm:px-6 lg:px-8"
+      aria-labelledby="categories-heading"
+    >
+      <div className="container-brand">
+        {/* Header */}
+        <div className="text-center mb-12 lg:mb-16">
+          <h2
+            id="categories-heading"
+            className="section-heading font-bold text-foreground mb-4"
+          >
+            Shop by <span className="text-primary">Concern</span>
+          </h2>
+          <p className="text-muted-foreground text-[1.0625rem] max-w-md mx-auto leading-relaxed">
+            Find the perfect plant-based solution for your unique needs
+          </p>
+        </div>
 
-                {/* Category Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    {categories.map((cat, i) => (
-                        <a
-                            key={cat.title}
-                            href="#"
-                            className="group flex flex-col items-center text-center py-6 px-4 rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-md cursor-pointer"
-                            style={{ animationDelay: `${i * 0.1}s` }}
-                        >
-                            {/* Icon tile */}
-                            <div
-                                className={`w-20 h-20 ${cat.tileBg} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-sm`}
-                            >
-                                <cat.icon className={`w-9 h-9 ${cat.iconColor}`} strokeWidth={1.8} />
-                            </div>
+        {/* Category cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+          {CATEGORIES.map((cat) => (
+            <a
+              key={cat.title}
+              href={cat.href}
+              className="group flex flex-col sm:flex-row items-start sm:items-center lg:items-start gap-5 lg:gap-6 p-6 lg:p-8 bg-white rounded-[20px] border border-border/40 hover:border-primary/10 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 ease-out"
+              aria-label={`${cat.title} — ${cat.description}`}
+            >
+              {/* Icon tile */}
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-[1.03] transition-transform duration-300 ease-out"
+                style={{ backgroundColor: cat.tileBg }}
+              >
+                <cat.icon
+                  className="w-7 h-7"
+                  style={{ color: cat.iconColor }}
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
+              </div>
 
-                            {/* Title */}
-                            <h3 className="font-display text-base font-mono font-semibold text-gray-900 mb-1">
-                                {cat.title}
-                            </h3>
-
-                            {/* Subtitle */}
-                            <p className="text-gray-500 text-xs sm:text-sm">
-                                {cat.description}
-                            </p>
-                        </a>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-};
-
-export default Categories;
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground mb-1.5 text-base tracking-tight">{cat.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">{cat.description}</p>
+                {/* Arrow */}
+                <ArrowRight
+                  className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors duration-200"
+                  aria-hidden="true"
+                />
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
