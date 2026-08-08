@@ -66,12 +66,19 @@ export default function OrderList({ initialOrders }: { initialOrders: any[] }) {
                         </div>
                         <div className="flex items-center gap-4">
                             <span
-                                className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${order.status === 'delivered'
-                                    ? 'bg-green-50 text-green-700 ring-green-600/20'
-                                    : order.status === 'cancelled'
-                                        ? 'bg-red-50 text-red-700 ring-red-600/20'
-                                        : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
-                                    }`}
+                                className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                                    order.status === 'delivered'
+                                        ? 'bg-green-50 text-green-700 ring-green-600/20'
+                                        : order.status === 'paid'
+                                            ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
+                                            : order.status === 'confirmed'
+                                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
+                                                : order.status === 'shipped'
+                                                    ? 'bg-purple-50 text-purple-700 ring-purple-600/20'
+                                                    : order.status === 'cancelled' || order.status === 'failed'
+                                                        ? 'bg-red-50 text-red-700 ring-red-600/20'
+                                                        : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
+                                }`}
                             >
                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                             </span>

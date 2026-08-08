@@ -3,6 +3,12 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/session'
 
 export async function middleware(request: NextRequest) {
+    // Webhook endpoints authenticate via HMAC signature, not user sessions.
+    // Skip session handling to avoid errors from missing auth cookies.
+    if (request.nextUrl.pathname.startsWith('/api/webhooks/')) {
+        return NextResponse.next()
+    }
+
     // Generate unique request ID for tracking
     const requestId = crypto.randomUUID()
 

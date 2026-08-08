@@ -14,6 +14,7 @@ export default async function DashboardPage() {
         .from('orders')
         .select('*, order_items(*, product:products(name, image_url))')
         .eq('user_id', user?.id)
+        .neq('status', 'created')
         .order('created_at', { ascending: false })
 
     return (

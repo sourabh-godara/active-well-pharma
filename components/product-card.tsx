@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Heart, Star, ShoppingBag } from 'lucide-react'
-import { Button } from './ui/button'
+import { AddToCartButton } from './add-to-cart-button'
 import { Product } from '@/types'
 import { useState } from 'react'
 
@@ -42,7 +42,7 @@ export function ProductCard({ product }: ProductCardProps): React.JSX.Element {
       aria-label={`${product.name} — ₹${product.price}`}
     >
       {/* Subtle hover shadow via pseudo-element for smoother transition */}
-      <div 
+      <div
         className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{
           boxShadow: '0 12px 40px -8px rgba(0, 0, 0, 0.08)',
@@ -77,9 +77,8 @@ export function ProductCard({ product }: ProductCardProps): React.JSX.Element {
           className="absolute top-4 right-4 w-9 h-9 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:bg-white hover:scale-105 transition-all duration-300 ease-out"
         >
           <Heart
-            className={`w-[16px] h-[16px] transition-colors duration-300 ${
-              wishlisted ? 'fill-accent text-accent' : 'text-foreground/40 hover:text-accent'
-            }`}
+            className={`w-[16px] h-[16px] transition-colors duration-300 ${wishlisted ? 'fill-accent text-accent' : 'text-foreground/40 hover:text-accent'
+              }`}
             aria-hidden="true"
           />
         </button>
@@ -121,13 +120,11 @@ export function ProductCard({ product }: ProductCardProps): React.JSX.Element {
         </div>
 
         {/* Add to Cart — always visible */}
-        <Button
-          className="w-full rounded-xl h-11 text-[14px] font-semibold bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-          onClick={(e: React.MouseEvent) => e.preventDefault()} // Product page handles cart
-          aria-label={`Add ${product.name} to cart`}
-        >
-          Add to Cart
-        </Button>
+        <AddToCartButton
+          product={product}
+          variant="compact"
+          className="hover:scale-[1.02] active:scale-[0.98] mt-auto"
+        />
       </div>
     </Link>
   )

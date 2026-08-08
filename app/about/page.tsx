@@ -1,7 +1,6 @@
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import {
-    Sparkles,
     Globe2,
     ShieldCheck,
     FlaskConical,

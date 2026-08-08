@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
 // Visual filter chips — no server-side filtering yet
-const FILTER_CHIPS = ['All', 'Skin Care', 'Hair Care', 'Wellness'] as const
 
 export default async function BestSellers(): Promise<React.JSX.Element> {
   const products = await getProductsWithRating()
@@ -38,24 +37,6 @@ export default async function BestSellers(): Promise<React.JSX.Element> {
               aria-hidden="true"
             />
           </Link>
-        </div>
-
-        {/* Filter chips (visual — no JS filter yet) */}
-        <div className="flex gap-2.5 mb-10 overflow-x-auto scrollbar-none pb-1">
-          {FILTER_CHIPS.map((chip, i) => (
-            <button
-              key={chip}
-              type="button"
-              className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${
-                i === 0
-                  ? 'bg-foreground text-background border-foreground shadow-sm'
-                  : 'bg-white text-foreground/60 border-border/60 hover:border-border hover:text-foreground hover:bg-muted/50'
-              }`}
-              aria-pressed={i === 0}
-            >
-              {chip}
-            </button>
-          ))}
         </div>
 
         {/* Products grid */}

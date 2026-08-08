@@ -8,8 +8,9 @@ import { useCart } from '@/app/context/cart-context'
 import { AnnouncementBar } from './announcement-bar'
 
 const NAV_LINKS = [
-  { label: 'Categories', href: '#categories' },
+
   { label: 'Best Sellers', href: '/shop' },
+  { label: 'Orders', href: '/orders' },
   { label: 'About', href: '/about' },
 ] as const
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCart } from '@/app/context/cart-context'
-import { createOrder, verifyPayment, placeOrderFree } from './actions'
+import { placeOrderFree } from './actions'
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Script from 'next/script'
@@ -12,11 +12,33 @@ import { CheckoutAddressPicker } from '@/components/checkout-address-picker'
 import { getAddresses } from '@/app/actions/address'
 import type { Address } from '@/types/address'
 
-function CheckoutInner() {
+// ── Types ────────────────────────────────────────────────────
+
+interface CreateOrderResponse {
+    orderId: string;
+    amount: number;
+    currency: string;
+    key_id: string;
+    status: string;
+    error?: string;
+    code?: string;
+    items?: Array<{ name: string; requested: number; available: number }>;
+}
+
+interface VerifyPaymentResponse {
+    success: boolean;
+    orderId?: string;
+    error?: string;
+}
+
+// ── Component ────────────────────────────────────────────────
+
+function CheckoutInner(): React.ReactElement {
     const { items, total, clearCart } = useCart()
     const router = useRouter()
     const params = useSearchParams()
     const [isProcessing, setIsProcessing] = useState(false)
+    const [isVerifying, setIsVerifying] = useState(false)
     const [addresses, setAddresses] = useState<Address[]>([])
     const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
     const [addressesLoaded, setAddressesLoaded] = useState(false)
@@ -32,16 +54,16 @@ function CheckoutInner() {
 
     // Fetch saved addresses on mount
     useEffect(() => {
-        getAddresses().then(addrs => {
+        getAddresses().then((addrs) => {
             setAddresses(addrs)
             // Auto-select default address if available
-            const def = addrs.find(a => a.is_default) ?? addrs[0] ?? null
+            const def = addrs.find((a) => a.is_default) ?? addrs[0] ?? null
             setSelectedAddress(def)
             setAddressesLoaded(true)
         })
     }, [])
 
-    const handlePayment = async () => {
+    const handlePayment = async (): Promise<void> => {
         if (items.length === 0) {
             toast.error('Cart is empty')
             return
@@ -66,48 +88,94 @@ function CheckoutInner() {
                 return
             }
 
-            // ── Paid order path (Razorpay) ────────────────────────────
-            const response = await createOrder(finalTotal)
+            // ── Paid order path (Razorpay via API routes) ────────────
 
-            if (!response.success || !response.data) {
-                toast.error(response.success ? 'Failed to create order: No data received' : response.error.message)
-                setIsProcessing(false)
+            // 1. Create order (server-side pricing, no client-supplied amount)
+            const createRes = await fetch('/api/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cartItems: items.map((item) => ({
+                        id: item.id,
+                        quantity: item.quantity,
+                    })),
+                    couponId,
+                    discountAmount,
+                    deliveryAddressId: selectedAddress.id,
+                }),
+            })
+
+            const createData: CreateOrderResponse = await createRes.json()
+
+            if (!createRes.ok) {
+                if (createData.code === 'INSUFFICIENT_STOCK' && createData.items) {
+                    const names = createData.items.map((i) => i.name).join(', ')
+                    toast.error(`Out of stock: ${names}`)
+                } else {
+                    toast.error(createData.error ?? 'Failed to create order')
+                }
                 return
             }
 
-            const { orderId, amount, currency } = response.data
+            // Defensive: if the returned order isn't in 'created' state,
+            // don't open the Razorpay modal — redirect appropriately
+            if (createData.status && createData.status !== 'created') {
+                if (createData.status === 'paid' || createData.status === 'confirmed') {
+                    toast.info('This order has already been paid.')
+                    router.push('/orders')
+                } else {
+                    toast.error('This order is no longer valid. Please try again.')
+                    router.push('/cart')
+                }
+                return
+            }
 
+            // 2. Open Razorpay checkout modal
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                amount,
-                currency,
+                key: createData.key_id,
+                amount: createData.amount,
+                currency: createData.currency,
                 name: 'ActiveWell Pharma',
                 description: 'Order Payment',
-                order_id: orderId,
-                handler: async function (response: any) {
+                order_id: createData.orderId,
+                handler: async (response: {
+                    razorpay_payment_id: string;
+                    razorpay_order_id: string;
+                    razorpay_signature: string;
+                }) => {
+                    // 3. Verify payment (fast-path UX confirmation)
+                    setIsVerifying(true)
                     try {
-                        const result = await verifyPayment(
-                            response.razorpay_payment_id,
-                            response.razorpay_order_id,
-                            response.razorpay_signature,
-                            items,
-                            finalTotal,
-                            couponId,
-                            discountAmount,
-                            selectedAddress.id
-                        )
+                        const verifyRes = await fetch('/api/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                            }),
+                        })
 
-                        if (result.success) {
+                        const verifyData: VerifyPaymentResponse = await verifyRes.json()
+
+                        if (verifyRes.ok && verifyData.success) {
                             clearCart()
-                            toast.success('Order placed successfully!')
+                            toast.success('Payment successful! Order confirmed.')
                             router.push('/orders')
                         } else {
-                            toast.error(result.error.message)
+                            toast.error(verifyData.error ?? 'Payment verification failed')
                         }
-                    } catch (error) {
-                        toast.error('Payment verification failed')
-                        console.error(error)
+                    } catch {
+                        toast.error('Payment verification failed. Your payment is safe — please check your orders.')
+                    } finally {
+                        setIsVerifying(false)
                     }
+                },
+                modal: {
+                    ondismiss: () => {
+                        toast.info('Payment was cancelled. You can try again.')
+                        setIsProcessing(false)
+                    },
                 },
                 prefill: {
                     name: selectedAddress.name,
@@ -116,14 +184,17 @@ function CheckoutInner() {
                 theme: { color: '#16a34a' },
             }
 
-            const rzp1 = new (window as any).Razorpay(options)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const RazorpayConstructor = (window as unknown as Record<string, unknown>).Razorpay as new (opts: Record<string, unknown>) => { open: () => void }
+            const rzp1 = new RazorpayConstructor(options)
             rzp1.open()
 
-        } catch (error) {
-            console.error(error)
+        } catch {
             toast.error('Failed to initiate payment')
         } finally {
-            setIsProcessing(false)
+            if (!isVerifying) {
+                setIsProcessing(false)
+            }
         }
     }
 
@@ -187,12 +258,23 @@ function CheckoutInner() {
                             </div>
                         )}
 
+                        {/* ── Verifying state ── */}
+                        {isVerifying && (
+                            <div className="flex items-center gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 mt-3">
+                                <Loader2 className="h-4 w-4 animate-spin text-blue-600 shrink-0" />
+                                <p className="text-xs text-blue-700 font-medium">
+                                    Payment received, confirming your order…
+                                </p>
+                            </div>
+                        )}
+
                         <button
+                            id="checkout-pay-button"
                             onClick={handlePayment}
-                            disabled={isProcessing || items.length === 0 || !selectedAddress}
+                            disabled={isProcessing || isVerifying || items.length === 0 || !selectedAddress}
                             className="w-full mt-5 rounded-full bg-green-600 px-3.5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                         >
-                            {isProcessing
+                            {isProcessing || isVerifying
                                 ? <><Loader2 className="h-4 w-4 animate-spin" />Processing…</>
                                 : isFreeOrder ? 'Place Order (Free)' : 'Pay Now'
                             }
@@ -209,7 +291,7 @@ function CheckoutInner() {
     )
 }
 
-export default function CheckoutForm() {
+export default function CheckoutForm(): React.ReactElement {
     return (
         <Suspense>
             <CheckoutInner />
