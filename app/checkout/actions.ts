@@ -11,15 +11,30 @@ import {
     type ActionResponse,
 } from '@/lib/errors'
 
-// ─── Free Order: skip payment when total is ₹0 ───────────────────────────────
-// Uses admin client for inventory operations (inventory_logs and products
-// require admin-level access via RLS policies). Stock is validated atomically
-// via the deduct_stock_for_cart RPC to prevent overselling.
+import { validateCouponServer } from '@/app/actions/validate-coupon-server'
+import { calculateOrderPricing } from '@/lib/pricing'
+import { ValidationError } from '@/lib/errors'
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const crypto = require('crypto');
 
+function computeIdempotencyKey(
+  userId: string | null,
+  items: Array<{ id: string; quantity: number }>,
+  couponId: string | null | undefined,
+  deliveryAddressId: string | null | undefined
+): string {
+  const sortedItems = items
+    .map((i) => `${i.id}:${i.quantity}`)
+    .sort()
+    .join(',');
+  const rawKey = `${userId ?? 'guest'}:${sortedItems}:${couponId ?? 'none'}:${deliveryAddressId ?? 'none'}`;
+  return crypto.createHash('sha256').update(rawKey).digest('hex');
+}
+
+// ─── Free Order: skip payment when total is ₹0 ───────────────────────────────
 export async function placeOrderFree(
-    cartItems: Array<{ id: string; quantity: number; price: number }>,
+    cartItems: Array<{ id: string; quantity: number }>,
     couponId?: string | null,
-    discountAmount?: number,
     deliveryAddressId?: string | null
 ): Promise<ActionResponse> {
     try {
@@ -28,25 +43,133 @@ export async function placeOrderFree(
         const adminClient = createAdminClient()
 
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            throw new AuthenticationError('User not authenticated', ErrorCode.USER_NOT_AUTHENTICATED)
+        const userId = user?.id || null
+
+        if (!Array.isArray(cartItems) || cartItems.length === 0) {
+            throw new ValidationError('Cart is empty')
         }
 
-        // 1. Create order with total = 0, status = confirmed (free orders skip 'paid')
+        // Validate delivery address ownership if authenticated
+        if (deliveryAddressId && userId) {
+            const { data: address } = await adminClient
+                .from('addresses')
+                .select('user_id')
+                .eq('id', deliveryAddressId)
+                .single()
+            if (!address || address.user_id !== userId) {
+                throw new ValidationError('Invalid delivery address')
+            }
+        }
+
+        // Refetch products and compute subtotal
+        const productIds = cartItems.map(item => item.id)
+        
+        // Fetch settings directly from DB (Authoritative, bypassing cache)
+        const { data: settings, error: settingsError } = await adminClient
+            .from('store_settings')
+            .select('shipping_charge, free_shipping_threshold')
+            .eq('id', 1)
+            .single()
+
+        if (settingsError || !settings) {
+            throw new ValidationError('Failed to load store settings')
+        }
+
+        const { data: products } = await adminClient
+            .from('products')
+            .select('id, name, price, stock_quantity, is_active')
+            .in('id', productIds)
+
+        if (!products || products.length !== productIds.length) {
+            throw new ValidationError('One or more products not found')
+        }
+
+        const productMap = new Map(products.map(p => [p.id as string, p]))
+        let subtotalPaise = 0
+        const validatedCart = []
+
+        for (const item of cartItems) {
+            const product = productMap.get(item.id)
+            if (!product || !product.is_active) {
+                throw new ValidationError(`Product unavailable`)
+            }
+            if ((product.stock_quantity as number) < item.quantity) {
+                throw new ValidationError(`Insufficient stock for ${product.name}`)
+            }
+            const pricePaise = Math.round((product.price as number) * 100)
+            subtotalPaise += pricePaise * item.quantity
+            validatedCart.push({
+                id: product.id as string,
+                quantity: item.quantity,
+                pricePaise
+            })
+        }
+
+        let pricingResult;
+        try {
+            const { result } = await calculateOrderPricing({
+                subtotalPaise,
+                couponId,
+                userId,
+                settings,
+            });
+            pricingResult = result;
+        } catch (err: any) {
+            throw new ValidationError(err.message || 'Pricing error')
+        }
+
+        if (pricingResult.total > 0) {
+            throw new ValidationError('Order is not completely free')
+        }
+
+        // Increment coupon usage before order creation
+        if (couponId) {
+            const { data: incrementSuccess, error: incrementError } = await adminClient.rpc('increment_coupon_usage_for_user', {
+                p_coupon_id: couponId,
+                p_user_id: userId,
+            })
+            if (incrementError || !incrementSuccess) {
+                throw new ValidationError('Coupon usage limit reached')
+            }
+        }
+
+        // Compute idempotency key
+        const idempotencyKey = computeIdempotencyKey(userId, validatedCart, couponId, deliveryAddressId)
+
+        // 1. Create order
         const { data: order, error: orderError } = await adminClient
             .from('orders')
             .insert({
-                user_id: user.id,
-                total_amount: 0,
-                status: 'confirmed',
+                user_id: userId,
+                total_amount: pricingResult.total,
+                shipping_amount: pricingResult.shipping,
+                status: 'created',
+                idempotency_key: idempotencyKey,
                 ...(couponId ? { coupon_id: couponId } : {}),
-                ...(discountAmount ? { discount_amount: discountAmount } : {}),
+                ...(pricingResult.discount > 0 ? { discount_amount: pricingResult.discount } : {}),
                 ...(deliveryAddressId ? { delivery_address_id: deliveryAddressId } : {}),
             })
             .select()
             .single()
 
         if (orderError) {
+            if (orderError.code === '23505') {
+                const { data: existing } = await adminClient
+                    .from('orders')
+                    .select('id')
+                    .eq('idempotency_key', idempotencyKey)
+                    .single()
+                
+                if (existing) {
+                    if (couponId) {
+                        await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId })
+                    }
+                    return { success: true, data: { orderId: existing.id } }
+                }
+            }
+            if (couponId) {
+                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId })
+            }
             throw new DatabaseError(orderError.message, ErrorCode.DATABASE_ERROR)
         }
 
@@ -54,42 +177,38 @@ export async function placeOrderFree(
         const { error: itemsError } = await adminClient
             .from('order_items')
             .insert(
-                cartItems.map((item) => ({
+                validatedCart.map((item) => ({
                     order_id: order.id,
                     product_id: item.id,
                     quantity: item.quantity,
-                    price_at_purchase: item.price,
+                    price_at_purchase: item.pricePaise / 100,
                 }))
             )
 
         if (itemsError) {
+            await adminClient.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
+            if (couponId) {
+                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId })
+            }
             throw new DatabaseError(itemsError.message, ErrorCode.DATABASE_ERROR)
         }
 
-        // 3. Atomic stock deduction via RPC (all-or-nothing, prevents overselling)
-        const stockItems = cartItems.map((item) => ({
-            product_id: item.id,
-            quantity: item.quantity,
-        }))
-
+        // 3. Atomic stock deduction
         const { error: stockError } = await adminClient.rpc('deduct_stock_for_cart', {
-            p_items: stockItems,
+            p_items: validatedCart.map(item => ({ product_id: item.id, quantity: item.quantity })),
         })
 
         if (stockError) {
-            // Stock deduction failed — the order is already created, so log the issue.
-            // For free orders this is an edge case (very unlikely to have stock contention
-            // on a fully-discounted order). Log and continue — admin handles operationally.
-            console.error('[placeOrderFree] stock deduction error:', stockError.message)
+            // Stock deduction failed — hard rollback
+            await adminClient.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
+            if (couponId) {
+                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId })
+            }
+            throw new ValidationError('Items ran out of stock during checkout')
         }
 
-        // 4. Increment coupon usage (after successful order creation only)
-        if (couponId) {
-            await adminClient.rpc('increment_coupon_usage_for_user', {
-                p_coupon_id: couponId,
-                p_user_id: user.id,
-            })
-        }
+        // Successfully placed free order — mark confirmed
+        await adminClient.from('orders').update({ status: 'confirmed' }).eq('id', order.id)
 
         return { success: true, data: { orderId: order.id } }
     } catch (error) {

@@ -29,12 +29,26 @@ export async function getAddresses(): Promise<Address[]> {
 
 // ─── Save new address ─────────────────────────────────────────────────────────
 
-export async function saveAddress(formData: AddressFormData): Promise<{ success: boolean; error?: string }> {
+export async function saveAddress(formData: AddressFormData): Promise<{ success: boolean; address?: Address; error?: string }> {
     const supabase = await getSupabase()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: 'Not authenticated' }
 
-    // If this is being set as default, clear existing default first
+    if (!user) {
+        // Guest mode: insert address via adminClient
+        const { createAdminClient } = await import('@/lib/supabase/admin')
+        const adminClient = createAdminClient()
+        
+        const { data, error } = await adminClient.from('addresses').insert({
+            ...formData,
+            user_id: null,
+            is_default: false
+        }).select().single()
+
+        if (error) return { success: false, error: error.message }
+        return { success: true, address: data as Address }
+    }
+
+    // Authenticated flow
     if (formData.is_default) {
         await supabase
             .from('addresses')
@@ -42,15 +56,15 @@ export async function saveAddress(formData: AddressFormData): Promise<{ success:
             .eq('user_id', user.id)
     }
 
-    const { error } = await supabase.from('addresses').insert({
+    const { data, error } = await supabase.from('addresses').insert({
         ...formData,
         user_id: user.id,
-    })
+    }).select().single()
 
     if (error) return { success: false, error: error.message }
 
     revalidatePath('/profile')
-    return { success: true }
+    return { success: true, address: data as Address }
 }
 
 // ─── Update existing address ──────────────────────────────────────────────────

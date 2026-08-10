@@ -147,16 +147,21 @@ async function handlePaymentCaptured(
       p_razorpay_payment_id: paymentEntity.id as string,
       p_razorpay_signature: '',
       p_amount: paymentEntity.amount as number,
+      p_status: (paymentEntity.status as string) ?? 'captured',
       p_method: (paymentEntity.method as string) ?? null,
       p_verified_via: 'webhook',
     }
   );
 
-  const finalEventType = rpcError
-    ? 'webhook.confirmation_error'
-    : result?.won
-      ? 'webhook.payment.captured'
-      : 'webhook.already_confirmed';
+  let finalEventType = 'webhook.already_confirmed';
+  if (rpcError) {
+    finalEventType = 'webhook.confirmation_error';
+  } else if (result?.amount_mismatch) {
+    // The RPC handled marking it failed internally, we just acknowledge receipt
+    finalEventType = 'webhook.payment.amount_mismatch';
+  } else if (result?.won) {
+    finalEventType = 'webhook.payment.captured';
+  }
 
   await logEvent(adminClient, {
     order_id: orderId,
@@ -172,6 +177,11 @@ async function handlePaymentCaptured(
     logger.error('Webhook confirm_order_payment RPC failed', {
       orderId,
       error: rpcError.message,
+    });
+  } else if (result?.amount_mismatch) {
+    logger.warn('Webhook payment captured but amount mismatched', {
+      orderId,
+      paymentId: paymentEntity.id,
     });
   } else {
     logger.info(`Webhook payment.captured — ${result?.won ? 'won' : 'already confirmed'}`, {

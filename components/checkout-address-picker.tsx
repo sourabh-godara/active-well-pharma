@@ -12,9 +12,10 @@ interface CheckoutAddressPickerProps {
     addresses: Address[]
     selected: Address | null
     onSelect: (addr: Address) => void
+    onAddressAdded: (addr: Address) => void
 }
 
-export function CheckoutAddressPicker({ addresses, selected, onSelect }: CheckoutAddressPickerProps) {
+export function CheckoutAddressPicker({ addresses, selected, onSelect, onAddressAdded }: CheckoutAddressPickerProps) {
     const [showForm, setShowForm] = useState(false)
 
     const formatAddress = (a: Address) =>
@@ -55,9 +56,14 @@ export function CheckoutAddressPicker({ addresses, selected, onSelect }: Checkou
                 <div className="rounded-lg border border-gray-200 p-4">
                     <AddressForm
                         onClose={() => setShowForm(false)}
-                        onSuccess={() => {
+                        onSuccess={(newAddr) => {
                             setShowForm(false)
-                            window.location.reload()
+                            if (newAddr) {
+                                onAddressAdded(newAddr)
+                                onSelect(newAddr)
+                            } else {
+                                window.location.reload()
+                            }
                         }}
                     />
                 </div>

@@ -11,6 +11,9 @@ import { Loader2, Gift } from 'lucide-react'
 import { CheckoutAddressPicker } from '@/components/checkout-address-picker'
 import { getAddresses } from '@/app/actions/address'
 import type { Address } from '@/types/address'
+import { applyCoupon } from '@/app/actions/apply-coupon'
+import type { ApplyCouponSuccess } from '@/types/coupon'
+import { getStoreSettings, type StoreSettings } from '@/app/actions/admin/settings'
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -34,7 +37,7 @@ interface VerifyPaymentResponse {
 // ── Component ────────────────────────────────────────────────
 
 function CheckoutInner(): React.ReactElement {
-    const { items, total, clearCart } = useCart()
+    const { items, clearCart } = useCart()
     const router = useRouter()
     const params = useSearchParams()
     const [isProcessing, setIsProcessing] = useState(false)
@@ -43,14 +46,51 @@ function CheckoutInner(): React.ReactElement {
     const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
     const [addressesLoaded, setAddressesLoaded] = useState(false)
 
-    // Coupon data passed from cart page via query params
-    const couponId = params.get('couponId') ?? undefined
-    const discountAmount = params.get('discount') ? Number(params.get('discount')) : undefined
-    const couponTotal = params.get('total') ? Number(params.get('total')) : undefined
+    const couponCode = params.get('coupon')
+    const [couponResult, setCouponResult] = useState<ApplyCouponSuccess | null>(null)
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false)
 
-    // Use server-verified total if coupon applied, otherwise fall back to cart total
-    const finalTotal = couponTotal ?? total
-    const isFreeOrder = finalTotal === 0
+    // Recompute subtotal from items to ensure accuracy
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const discountAmount = couponResult?.discount ?? 0
+    
+    const [settings, setSettings] = useState<StoreSettings | null>(null)
+    useEffect(() => {
+        getStoreSettings().then(setSettings)
+    }, [])
+
+    const discountedSubtotal = Math.max(0, subtotal - discountAmount)
+    let shipping = settings?.shipping_charge ?? 49
+    if (settings && discountedSubtotal >= settings.free_shipping_threshold) {
+        shipping = 0
+    }
+
+    const finalTotal = discountedSubtotal + shipping
+    const isFreeOrder = finalTotal === 0 && subtotal > 0
+    const couponId = couponResult?.couponId
+
+    useEffect(() => {
+        if (!couponCode) {
+            setCouponResult(null)
+            return
+        }
+
+        setIsValidatingCoupon(true)
+        applyCoupon(couponCode, subtotal)
+            .then((result) => {
+                if (result.valid) {
+                    setCouponResult(result)
+                } else {
+                    toast.error(`Coupon removed: ${result.message}`)
+                    setCouponResult(null)
+                }
+            })
+            .catch(() => {
+                toast.error('Failed to validate coupon')
+                setCouponResult(null)
+            })
+            .finally(() => setIsValidatingCoupon(false))
+    }, [couponCode, subtotal])
 
     // Fetch saved addresses on mount
     useEffect(() => {
@@ -77,7 +117,7 @@ function CheckoutInner(): React.ReactElement {
         try {
             // ── Free order path (100% coupon discount) ───────────────
             if (isFreeOrder) {
-                const result = await placeOrderFree(items, couponId, discountAmount, selectedAddress.id)
+                const result = await placeOrderFree(items, couponId, selectedAddress.id)
                 if (result.success) {
                     clearCart()
                     toast.success('Order placed successfully!')
@@ -215,6 +255,7 @@ function CheckoutInner(): React.ReactElement {
                             addresses={addresses}
                             selected={selectedAddress}
                             onSelect={setSelectedAddress}
+                            onAddressAdded={(addr) => setAddresses(prev => [addr, ...prev])}
                         />
                     ) : (
                         <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
@@ -228,7 +269,7 @@ function CheckoutInner(): React.ReactElement {
                         <dl className="space-y-3 text-sm">
                             <div className="flex justify-between text-gray-600">
                                 <dt>Subtotal</dt>
-                                <dd>₹{total.toLocaleString('en-IN')}</dd>
+                                <dd>₹{subtotal.toLocaleString('en-IN')}</dd>
                             </div>
                             {discountAmount && discountAmount > 0 && (
                                 <div className="flex justify-between text-green-600">
@@ -238,7 +279,9 @@ function CheckoutInner(): React.ReactElement {
                             )}
                             <div className="flex justify-between text-gray-600">
                                 <dt>Shipping</dt>
-                                <dd className="text-green-600 font-semibold">FREE</dd>
+                                <dd className={`font-semibold ${shipping === 0 ? 'text-green-600' : 'text-gray-900'}`}>
+                                    {shipping === 0 ? 'FREE' : `₹${shipping.toLocaleString('en-IN')}`}
+                                </dd>
                             </div>
                         </dl>
 
@@ -271,10 +314,10 @@ function CheckoutInner(): React.ReactElement {
                         <button
                             id="checkout-pay-button"
                             onClick={handlePayment}
-                            disabled={isProcessing || isVerifying || items.length === 0 || !selectedAddress}
+                            disabled={isProcessing || isVerifying || isValidatingCoupon || items.length === 0 || !selectedAddress}
                             className="w-full mt-5 rounded-full bg-green-600 px-3.5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                         >
-                            {isProcessing || isVerifying
+                            {isProcessing || isVerifying || isValidatingCoupon
                                 ? <><Loader2 className="h-4 w-4 animate-spin" />Processing…</>
                                 : isFreeOrder ? 'Place Order (Free)' : 'Pay Now'
                             }

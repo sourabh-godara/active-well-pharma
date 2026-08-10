@@ -13,7 +13,7 @@ const STEPS = [
     icon: Repeat2,
     title: 'Stay Consistent',
     description:
-      'Integrate into your daily ritual. True wellness takes time — most customers feel a noticeable difference within 4–6 weeks.',
+      'Integrate into your daily ritual. True wellness takes time  most customers feel a noticeable difference within 4–6 weeks.',
   },
   {
     number: '03',

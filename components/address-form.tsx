@@ -21,7 +21,7 @@ const INDIAN_STATES = [
 
 interface AddressFormProps {
     onClose: () => void
-    onSuccess: () => void
+    onSuccess: (address?: Address) => void
     existing?: Address | null
 }
 
@@ -58,7 +58,11 @@ export function AddressForm({ onClose, onSuccess, existing }: AddressFormProps) 
 
             if (result.success) {
                 toast.success(existing ? 'Address updated!' : 'Address saved!')
-                onSuccess()
+                if (result.address) {
+                    onSuccess(result.address)
+                } else {
+                    onSuccess()
+                }
             } else {
                 toast.error(result.error ?? 'Failed to save address')
             }

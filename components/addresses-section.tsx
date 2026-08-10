@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Edit2, Trash2, Star } from 'lucide-react'
+import { Plus, Edit2, Trash2, Star, Home, MoreVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AddressForm } from '@/components/address-form'
@@ -57,16 +57,16 @@ export function AddressesSection({ initialAddresses }: AddressesSectionProps) {
 
     return (
         <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h2 className="font-display text-xl font-bold text-foreground">Saved Addresses</h2>
+            {/* Header / Add Button Row */}
+            <div className="flex justify-end mb-4">
                 {!showForm && !editingAddress && (
-                    <button
+                    <Button
+                        variant="outline"
                         onClick={() => setShowForm(true)}
-                        className="text-sm text-primary font-medium flex items-center gap-1 hover:underline"
+                        className="text-sm text-green-700 font-medium flex items-center gap-1.5 border-green-200 hover:bg-green-50"
                     >
-                        <Plus className="h-4 w-4" /> Add New
-                    </button>
+                        <Plus className="h-4 w-4" /> Add New Address
+                    </Button>
                 )}
             </div>
 
@@ -100,54 +100,53 @@ export function AddressesSection({ initialAddresses }: AddressesSectionProps) {
                                 />
                             </div>
                         ) : (
-                            <div className={`bg-card rounded-2xl shadow-card p-5 border-2 transition-colors ${addr.is_default ? 'border-primary' : 'border-transparent'}`}>
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                            <span className="font-body text-sm font-semibold text-foreground">
-                                                {addr.address_type}
-                                            </span>
-                                            {addr.is_default && (
-                                                <Badge className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 hover:bg-primary/10">
-                                                    Default
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <p className="font-body text-sm text-foreground font-medium">{addr.name}</p>
-                                        <p className="font-body text-sm text-muted-foreground mt-0.5">
-                                            {formatAddress(addr)}
-                                        </p>
-                                        <p className="font-body text-xs text-muted-foreground mt-0.5">
-                                            📞 {addr.phone}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        {!addr.is_default && (
-                                            <Button
-                                                variant="ghost" size="sm"
-                                                title="Set as default"
-                                                onClick={() => handleSetDefault(addr.id)}
-                                                disabled={isPending}
-                                                className="h-8 w-8 p-0 text-muted-foreground hover:text-yellow-500"
-                                            >
-                                                <Star className="h-4 w-4" />
-                                            </Button>
+                            <div className={`rounded-2xl p-5 border transition-colors flex items-start gap-4 ${addr.is_default ? 'bg-green-50/50 border-green-200' : 'bg-white border-gray-100 shadow-sm'}`}>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${addr.is_default ? 'bg-green-100' : 'bg-gray-100'}`}>
+                                    <Home className={`w-5 h-5 ${addr.is_default ? 'text-green-700' : 'text-gray-500'}`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        {addr.is_default && (
+                                            <Badge className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0 hover:bg-green-100 border-none shadow-none">
+                                                Default
+                                            </Badge>
                                         )}
-                                        <Button
-                                            variant="ghost" size="sm"
-                                            onClick={() => setEditingAddress(addr)}
-                                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-                                        >
-                                            <Edit2 className="h-4 w-4" />
+                                        {!addr.is_default && (
+                                            <Badge className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0 hover:bg-gray-100 border-none shadow-none">
+                                                {addr.address_type}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <p className="font-bold text-sm text-gray-900 mt-1">{addr.name}</p>
+                                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">
+                                        {formatAddress(addr)}
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        Phone: {addr.phone}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0 ml-4">
+                                    <Button
+                                        variant="outline" size="sm"
+                                        onClick={() => setEditingAddress(addr)}
+                                        className="h-8 rounded-full text-xs font-medium border-gray-200 text-gray-700 gap-1.5"
+                                    >
+                                        <Edit2 className="h-3.5 w-3.5" /> Edit
+                                    </Button>
+                                    <div className="relative group">
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 rounded-full border border-transparent hover:border-gray-200">
+                                            <MoreVertical className="h-4 w-4" />
                                         </Button>
-                                        <Button
-                                            variant="ghost" size="sm"
-                                            onClick={() => handleDelete(addr.id)}
-                                            disabled={isPending}
-                                            className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                        <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 p-1">
+                                            {!addr.is_default && (
+                                                <button onClick={() => handleSetDefault(addr.id)} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded-lg text-gray-700">
+                                                    Set as Default
+                                                </button>
+                                            )}
+                                            <button onClick={() => handleDelete(addr.id)} className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 rounded-lg text-red-600">
+                                                Delete
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

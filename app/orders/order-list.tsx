@@ -80,9 +80,14 @@ export default function OrderList({ initialOrders }: { initialOrders: any[] }) {
                                                         : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
                                 }`}
                             >
-                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                {order.status === 'created' ? 'Abandoned' : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                             </span>
-                            <p className="text-lg font-bold text-gray-900">₹{Number(order.total_amount).toLocaleString('en-IN')}</p>
+                            <div className="flex flex-col items-end">
+                                <p className="text-lg font-bold text-gray-900">₹{Number(order.total_amount).toLocaleString('en-IN')}</p>
+                                {order.shipping_amount > 0 && (
+                                    <p className="text-xs text-gray-500">Includes ₹{Number(order.shipping_amount).toLocaleString('en-IN')} shipping</p>
+                                )}
+                            </div>
                         </div>
                     </div>
 

@@ -4,11 +4,25 @@ const crypto = require('crypto');
 import { createAdminClient } from '@/lib/supabase/admin';
 import { paymentEnv } from '@/lib/env';
 import { logger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
+import Razorpay from 'razorpay';
+
+// Initialize Razorpay client
+const razorpay = new Razorpay({
+  key_id: paymentEnv.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  key_secret: paymentEnv.RAZORPAY_KEY_SECRET,
+});
 
 // ── Route Handler ────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const adminClient = createAdminClient();
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  // --- Auth Check (ID-5) ---
+  const { data: { user } } = await supabase.auth.getUser();
 
   // --- Parse input ---
   let body: {
@@ -60,10 +74,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 });
   }
 
-  // --- Look up internal order ID + total_amount ---
+  // --- Look up internal order ID + Authorization Check ---
   const { data: order } = await adminClient
     .from('orders')
-    .select('id, total_amount')
+    .select('id, user_id, total_amount')
     .eq('razorpay_order_id', razorpay_order_id)
     .single();
 
@@ -72,8 +86,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
-  // Derive paise from our own server-computed order total
-  const amountPaise = Math.round((order.total_amount as number) * 100);
+  if (order.user_id !== null && order.user_id !== user?.id) {
+    logger.error('Unauthorized order access attempt', { razorpay_order_id, userId: user?.id, orderUserId: order.user_id });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+
+  // --- Fetch Payment from Razorpay (ID-2) ---
+  let fetchedPayment;
+  try {
+    fetchedPayment = await razorpay.payments.fetch(razorpay_payment_id);
+  } catch (error) {
+    logger.error('Failed to fetch payment from Razorpay', { error, razorpay_payment_id });
+    return NextResponse.json({ error: 'Failed to verify payment status with Razorpay. Please retry.' }, { status: 502 });
+  }
+
+  if (fetchedPayment.status !== 'captured') {
+    logger.warn('Payment not captured', { status: fetchedPayment.status, razorpay_payment_id });
+    return NextResponse.json({ error: 'Payment is not fully captured. Please contact support.' }, { status: 400 });
+  }
 
   // --- Single RPC: confirm payment atomically ---
   const { data: result, error: rpcError } = await adminClient.rpc(
@@ -82,8 +112,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       p_order_id: order.id as string,
       p_razorpay_payment_id: razorpay_payment_id,
       p_razorpay_signature: razorpay_signature,
-      p_amount: amountPaise,
-      p_method: null,            // not available from checkout handler
+      p_amount: fetchedPayment.amount,
+      p_status: fetchedPayment.status,
+      p_method: fetchedPayment.method ?? null,
       p_verified_via: 'checkout_handler',
     }
   );
@@ -103,18 +134,46 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Payment confirmation failed' }, { status: 500 });
   }
 
-  // --- Log the appropriate event ---
+  // --- Handle RPC Results ---
+  if (result?.amount_mismatch) {
+    logger.error('Payment amount mismatch', { orderId: order.id as string });
+    return NextResponse.json({ error: 'Payment amount mismatch. The order has been flagged for review.' }, { status: 400 });
+  }
+
   if (result?.won) {
-    await adminClient.from('payment_events').insert({
-      order_id: order.id,
-      event_type: 'checkout.success',
-      raw_payload: { razorpay_payment_id, razorpay_order_id },
-    });
+    if (!result.stock_ok) {
+      await adminClient
+        .from('orders')
+        .update({
+          status: 'cancelled',
+          notes: { refund_required: true, reason: 'stock_oversold' }
+        })
+        .eq('id', order.id);
+
+      await adminClient.from('payment_events').insert({
+        order_id: order.id,
+        event_type: 'checkout.stock_conflict',
+        raw_payload: { razorpay_payment_id, razorpay_order_id, failures: result.stock_failures },
+      });
+
+      logger.warn('Payment confirmed but stock oversold, flagged for refund', {
+        orderId: order.id as string,
+      });
+
+      return NextResponse.json({
+        success: true,
+        orderId: order.id,
+        message: 'Payment received, confirming stock',
+      });
+    }
+
+    // Success event is already logged by the RPC now, no need to duplicate
     logger.info('Payment confirmed via checkout handler', {
       orderId: order.id as string,
-      stockOk: result.stock_ok as boolean,
+      stockOk: true,
     });
   } else {
+    // If not won, either webhook beat us to it, or it was already confirmed
     await adminClient.from('payment_events').insert({
       order_id: order.id,
       event_type: 'checkout.already_confirmed',
@@ -127,6 +186,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     logger.info('Checkout handler arrived second', { orderId: order.id as string });
   }
 
-  // Either way, return success — the order IS paid
+  // Either way, return success — the order IS paid (if it was won or already paid)
   return NextResponse.json({ success: true, orderId: order.id });
 }

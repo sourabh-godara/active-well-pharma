@@ -4,9 +4,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import type { ApplyCouponResult } from '@/types/coupon'
+import type { ApplyCouponResult, CouponDiscountType } from '@/types/coupon'
 
-// ─── applyCoupon (with per-user limit check) ─────────────────────────────────
+import { validateCouponServer } from './validate-coupon-server'
 
 export async function applyCoupon(
     code: string,
@@ -18,10 +18,10 @@ export async function applyCoupon(
 
     const supabase = createAdminClient()
 
-    // 1. Fetch coupon
+    // 1. Fetch coupon by code
     const { data: coupon, error } = await supabase
         .from('coupons')
-        .select('*')
+        .select('id')
         .ilike('code', code.trim())
         .single()
 
@@ -29,84 +29,36 @@ export async function applyCoupon(
         return { valid: false, message: 'Enter Valid Coupon Code' }
     }
 
-    // 2. Active
-    if (!coupon.is_active) {
-        return { valid: false, message: 'This coupon is no longer active' }
-    }
-
-    // 3. Date range
-    const now = new Date()
-    if (coupon.starts_at && new Date(coupon.starts_at) > now) {
-        return { valid: false, message: 'This coupon is not yet valid' }
-    }
-    if (coupon.expires_at && new Date(coupon.expires_at) < now) {
-        return { valid: false, message: 'This coupon has expired' }
-    }
-
-    // 4. Global usage limit
-    if (coupon.usage_limit !== null && coupon.usage_limit !== undefined &&
-        coupon.used_count >= coupon.usage_limit) {
-        return { valid: false, message: 'This coupon has reached its usage limit' }
-    }
-
-    // 5. Minimum order
-    const minOrder = Number(coupon.min_order_amount ?? 0)
-    if (cartTotal < minOrder) {
-        return {
-            valid: false,
-            message: `Minimum order of ₹${minOrder.toLocaleString('en-IN')} required`,
+    // 2. Get user if logged in
+    let userId = ''
+    try {
+        const cookieStore = await cookies()
+        const sessionClient = createClient(cookieStore)
+        const { data: { user } } = await sessionClient.auth.getUser()
+        if (user) {
+            userId = user.id
         }
+    } catch {
+        // Not logged in — skip strict user check (checkout will enforce it)
     }
 
-    // 6. Per-user limit check (only if user is logged in and per_user_limit set)
-    if (coupon.per_user_limit !== null && coupon.per_user_limit !== undefined) {
-        try {
-            const cookieStore = await cookies()
-            const sessionClient = createClient(cookieStore)
-            const { data: { user } } = await sessionClient.auth.getUser()
+    // 3. Call single source of truth
+    const result = await validateCouponServer(coupon.id, userId, Math.round(cartTotal * 100))
 
-            if (user) {
-                const { data: usage } = await supabase
-                    .from('coupon_usages')
-                    .select('usage_count')
-                    .eq('coupon_id', coupon.id)
-                    .eq('user_id', user.id)
-                    .single()
-
-                const userUsed = usage?.usage_count ?? 0
-                if (userUsed >= coupon.per_user_limit) {
-                    return {
-                        valid: false,
-                        message: `You have already used this coupon ${coupon.per_user_limit} time(s)`,
-                    }
-                }
-            }
-        } catch {
-            // Not logged in — skip per-user check; checkout will enforce it
-        }
+    if (!result.valid) {
+        return { valid: false, message: result.message || 'Invalid coupon' }
     }
 
-    // 7. Calculate discount server-side
-    let discount: number
-    if (coupon.discount_type === 'percentage') {
-        discount = cartTotal * (Number(coupon.discount_value) / 100)
-        if (coupon.max_discount_amount) {
-            discount = Math.min(discount, Number(coupon.max_discount_amount))
-        }
-    } else {
-        discount = Number(coupon.discount_value)
-    }
-
-    discount = Math.min(Math.round(discount * 100) / 100, cartTotal)
+    const discountRupees = result.discountPaise / 100
 
     return {
         valid: true,
-        discount,
-        finalTotal: Math.round((cartTotal - discount) * 100) / 100,
-        couponId: coupon.id,
-        couponCode: coupon.code.toUpperCase(),
-        discountType: coupon.discount_type,
-        message: 'Coupon applied successfully!',
+        discount: discountRupees,
+        finalTotal: Math.round((cartTotal - discountRupees) * 100) / 100,
+        couponId: result.couponId as string,
+        couponCode: (result.couponCode as string).toUpperCase(),
+        discountType: result.discountType as CouponDiscountType,
+        message: result.message || 'Coupon applied successfully!',
     }
 }
 

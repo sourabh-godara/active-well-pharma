@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
     LayoutDashboard, Package, ShoppingCart, LogOut,
-    Users, Megaphone, Presentation, Ticket
+    Users, Megaphone, Presentation, Ticket, Settings
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -21,6 +21,7 @@ const navigation = [
     { name: 'Coupons', href: '/admin/coupons', icon: Ticket, exact: false },
     { name: 'Users', href: '/admin/users', icon: Users, exact: false },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart, exact: false },
+    { name: 'Settings', href: '/admin/settings', icon: Settings, exact: false },
 ]
 
 // Pure sidebar content — no positioning, no fixed/absolute

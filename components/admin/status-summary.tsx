@@ -3,13 +3,13 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 
 interface StatusSummaryProps {
-    pendingCount: number
+    shippedCount: number
     totalCount: number
 }
 
-export function StatusSummary({ pendingCount, totalCount }: StatusSummaryProps) {
-    const completedCount = totalCount - pendingCount
-    const pendingPct = totalCount > 0 ? Math.round((pendingCount / totalCount) * 100) : 0
+export function StatusSummary({ shippedCount, totalCount }: StatusSummaryProps) {
+    const completedCount = totalCount - shippedCount
+    const shippedPct = totalCount > 0 ? Math.round((shippedCount / totalCount) * 100) : 0
     const completedPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
     return (
@@ -19,15 +19,15 @@ export function StatusSummary({ pendingCount, totalCount }: StatusSummaryProps) 
                 <p className="text-xs text-muted-foreground">Order fulfillment breakdown</p>
             </CardHeader>
             <CardContent className="space-y-5">
-                {/* Pending */}
+                {/* Shipped */}
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs">Pending</Badge>
+                            <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-xs">Shipped</Badge>
                         </div>
-                        <span className="text-sm font-semibold">{pendingCount} <span className="text-muted-foreground font-normal text-xs">({pendingPct}%)</span></span>
+                        <span className="text-sm font-semibold">{shippedCount} <span className="text-muted-foreground font-normal text-xs">({shippedPct}%)</span></span>
                     </div>
-                    <Progress value={pendingPct} className="h-2" />
+                    <Progress value={shippedPct} className="h-2 [&>div]:bg-purple-500" />
                 </div>
 
                 {/* Completed */}

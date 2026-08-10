@@ -117,10 +117,15 @@ export default function OrderRow({ order, isNeedsAttention }: { order: any, isNe
                     <div className="font-semibold text-slate-900">
                         ₹{Number(order.total_amount).toLocaleString('en-IN')}
                     </div>
+                    {order.shipping_amount > 0 && (
+                        <div className="text-[10px] text-slate-500">
+                            Includes ₹{Number(order.shipping_amount).toLocaleString('en-IN')} shipping
+                        </div>
+                    )}
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm">
                     <Badge variant="outline" className={`capitalize shadow-sm ${STATUS_STYLES[status] ?? 'bg-slate-50 text-slate-700 border-slate-200'}`}>
-                        {status}
+                        {status === 'created' ? 'abandoned' : status}
                     </Badge>
                 </td>
                 <td className="py-4 pl-3 pr-4 text-right sm:pr-6">
@@ -147,7 +152,7 @@ export default function OrderRow({ order, isNeedsAttention }: { order: any, isNe
                                     >
                                         <div className="flex items-center gap-2">
                                             <span className={`h-2 w-2 rounded-full ${STATUS_STYLES[s]?.split(' ')[0] || 'bg-slate-200'}`} />
-                                            {s}
+                                            {s === 'created' ? 'abandoned' : s}
                                         </div>
                                     </DropdownMenuItem>
                                 ))}

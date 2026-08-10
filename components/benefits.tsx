@@ -4,7 +4,7 @@ const BENEFITS = [
   {
     icon: Droplets,
     title: '100% Plant-Based',
-    description: 'Every ingredient is sourced from nature\'s finest superfoods — absolutely zero animal derivatives or synthetic fillers.',
+    description: 'Every ingredient comes from real, whole-food sources. Nothing animal derived, nothing synthetic.',
     accent: '#d8f0e8',
     iconColor: '#215732',
     colSpan: 'lg:col-span-2',
@@ -13,7 +13,7 @@ const BENEFITS = [
   {
     icon: FlaskConical,
     title: 'Clinically Inspired',
-    description: 'Formulas developed with evidence-based research, targeting visible results.',
+    description: 'Formulas developed with evidence based research, targeting visible results.',
     accent: '#e8f0fe',
     iconColor: '#2563eb',
     colSpan: 'lg:col-span-1',
@@ -40,7 +40,7 @@ const BENEFITS = [
   {
     icon: Truck,
     title: 'Fast Shipping',
-    description: 'Orders dispatched within 24 hours. Free delivery on orders above ₹599.',
+    description: 'Orders dispatched within 24 hours. Free delivery on orders above ₹499.',
     accent: '#fde8e2',
     iconColor: '#e8614a',
     colSpan: 'lg:col-span-2',

@@ -19,16 +19,16 @@ export default async function AdminDashboard() {
         { count: productsCount },
         { count: ordersCount },
         { data: revenueData },
-        { data: pendingOrders },
+        { data: shippedOrders },
         { data: recentOrders },
         { data: allOrders }
     ] = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('total_amount').neq('status', 'cancelled'),
-        supabase.from('orders').select('id', { count: 'exact' }).eq('status', 'pending'),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).in('status', ['paid', 'confirmed', 'shipped', 'delivered']),
+        supabase.from('orders').select('total_amount').in('status', ['paid', 'confirmed', 'shipped', 'delivered']),
+        supabase.from('orders').select('id', { count: 'exact' }).eq('status', 'shipped'),
         supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5),
-        supabase.from('orders').select('created_at, total_amount').neq('status', 'cancelled').order('created_at', { ascending: true })
+        supabase.from('orders').select('created_at, total_amount').in('status', ['paid', 'confirmed', 'shipped', 'delivered']).order('created_at', { ascending: true })
     ])
 
     const totalRevenue = revenueData?.reduce((sum, o) => sum + o.total_amount, 0) || 0
@@ -45,11 +45,14 @@ export default async function AdminDashboard() {
     // Badge variant helper
     const statusBadge = (status: string) => {
         switch (status) {
-            case 'delivered': return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-xs">Delivered</Badge>
-            case 'confirmed': return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-xs">Confirmed</Badge>
+            case 'delivered': return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-xs">Delivered</Badge>
+            case 'confirmed': return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 text-xs">Confirmed</Badge>
+            case 'paid': return <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 text-xs">Paid</Badge>
             case 'shipped': return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-xs">Shipped</Badge>
             case 'cancelled': return <Badge variant="destructive" className="text-xs">Cancelled</Badge>
-            default: return <Badge variant="secondary" className="text-xs">Pending</Badge>
+            case 'failed': return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 text-xs">Failed</Badge>
+            case 'created': return <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 text-xs">Abandoned</Badge>
+            default: return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-xs">Pending</Badge>
         }
     }
 
@@ -82,10 +85,10 @@ export default async function AdminDashboard() {
                     description="Active catalogue items"
                 />
                 <StatsCard
-                    title="Pending Orders"
-                    value={pendingOrders?.length ?? 0}
-                    icon={Clock}
-                    description="Awaiting processing"
+                    title="Shipped Orders"
+                    value={shippedOrders?.length ?? 0}
+                    icon={Package}
+                    description="In transit"
                 />
             </div>
 
@@ -96,7 +99,7 @@ export default async function AdminDashboard() {
                 </div>
                 <div>
                     <StatusSummary
-                        pendingCount={pendingOrders?.length ?? 0}
+                        shippedCount={shippedOrders?.length ?? 0}
                         totalCount={ordersCount ?? 0}
                     />
                 </div>

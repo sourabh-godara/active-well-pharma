@@ -35,8 +35,39 @@ create or replace function public.increment_coupon_usage_for_user(
   p_coupon_id uuid,
   p_user_id   uuid
 )
-returns void language plpgsql security definer as $$
+returns boolean language plpgsql security definer as $$
+declare
+  v_usage_limit int;
+  v_per_user_limit int;
+  v_used_count int;
+  v_user_usage_count int;
 begin
+  -- Lock the row and read limits
+  select usage_limit, per_user_limit, used_count
+    into v_usage_limit, v_per_user_limit, v_used_count
+    from public.coupons
+    where id = p_coupon_id for update;
+
+  if not found then
+    return false;
+  end if;
+
+  -- Check global limit
+  if v_usage_limit is not null and v_used_count >= v_usage_limit then
+    return false;
+  end if;
+
+  -- Check per-user limit
+  if v_per_user_limit is not null then
+    select usage_count into v_user_usage_count
+      from public.coupon_usages
+      where coupon_id = p_coupon_id and user_id = p_user_id for update;
+      
+    if found and v_user_usage_count >= v_per_user_limit then
+      return false;
+    end if;
+  end if;
+
   -- Increment global used_count
   update public.coupons
     set used_count = used_count + 1
@@ -49,5 +80,31 @@ begin
     do update set
       usage_count = public.coupon_usages.usage_count + 1,
       updated_at  = now();
+
+  return true;
+end;
+$$;
+
+-- 6. RPC: decrement per-user usage (for rollback)
+create or replace function public.decrement_coupon_usage_for_user(
+  p_coupon_id uuid,
+  p_user_id   uuid
+)
+returns void language plpgsql security definer as $$
+begin
+  -- Lock the row to match the locking discipline
+  perform id from public.coupons where id = p_coupon_id for update;
+  perform id from public.coupon_usages where coupon_id = p_coupon_id and user_id = p_user_id for update;
+
+  -- Decrement global used_count safely
+  update public.coupons
+    set used_count = greatest(used_count - 1, 0)
+    where id = p_coupon_id;
+
+  -- Decrement per-user usage safely
+  update public.coupon_usages
+    set usage_count = greatest(usage_count - 1, 0),
+        updated_at = now()
+    where coupon_id = p_coupon_id and user_id = p_user_id;
 end;
 $$;

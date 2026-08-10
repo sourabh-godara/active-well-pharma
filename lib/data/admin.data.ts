@@ -26,6 +26,7 @@ type AdminOrder = {
     id: string
     user_id: string
     total_amount: number
+    shipping_amount: number
     status: string
     created_at: string
     coupon_id: string | null
@@ -123,6 +124,7 @@ export const getAdminOrders = unstable_cache(
         id,
         user_id,
         total_amount,
+        shipping_amount,
         status,
         created_at,
         coupon_id,

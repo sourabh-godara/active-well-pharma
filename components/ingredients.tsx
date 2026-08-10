@@ -58,7 +58,7 @@ export default function Ingredients(): React.JSX.Element {
               Star <span className="text-primary">Ingredients</span>
             </h2>
             <p className="text-muted-foreground text-[1.0625rem] leading-relaxed">
-              Every ingredient is chosen for efficacy and purity — sourced directly from nature, validated by clinical science.
+              Every ingredient is chosen for efficacy and purity  sourced directly from nature, validated by clinical science.
             </p>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function Ingredients(): React.JSX.Element {
               aria-label={`${item.name} — ${item.benefit}`}
             >
               {/* Large background decorative emoji (simulating a cutout) */}
-              <div 
+              <div
                 className="absolute -bottom-8 -right-8 text-[160px] opacity-10 rotate-[-15deg] select-none pointer-events-none"
                 aria-hidden="true"
               >

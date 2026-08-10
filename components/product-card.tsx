@@ -24,7 +24,7 @@ export function ProductCard({ product }: ProductCardProps): React.JSX.Element {
 
   const originalPrice = product.price + 300
   const savings = originalPrice - product.price
-  const discountPct = Math.round((savings / originalPrice) * 100)
+  const discountPct = 15
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -111,13 +111,7 @@ export function ProductCard({ product }: ProductCardProps): React.JSX.Element {
         <div className="flex-1" />
 
         {/* Price row */}
-        <div className="flex flex-col gap-1 mb-5">
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold text-foreground tracking-tight">₹{product.price}</span>
-            <span className="text-sm text-muted-foreground/60 line-through decoration-muted-foreground/30">₹{originalPrice}</span>
-          </div>
-          <span className="text-[11px] font-semibold text-secondary tracking-wide uppercase">Save ₹{savings}</span>
-        </div>
+        <span className="text-lg font-bold mb-4 text-foreground tracking-tight">₹{product.price}</span>
 
         {/* Add to Cart — always visible */}
         <AddToCartButton

@@ -4,6 +4,8 @@ const crypto = require('crypto');
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
+import { validateCouponServer } from '@/app/actions/validate-coupon-server';
+import { calculateOrderPricing } from '@/lib/pricing';
 import { razorpay } from '@/lib/razorpay';
 import { getRateLimiter } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -46,15 +48,16 @@ interface CreateOrderResponse {
 // ── Helpers ──────────────────────────────────────────────────
 
 function computeIdempotencyKey(
-  userId: string,
+  userId: string | null,
   items: ValidatedItem[],
-  couponId: string | null | undefined
+  couponId: string | null | undefined,
+  deliveryAddressId: string | null | undefined
 ): string {
   const sortedItems = items
     .map((i) => `${i.id}:${i.quantity}`)
     .sort()
     .join(',');
-  const rawKey = `${userId}:${sortedItems}:${couponId ?? 'none'}`;
+  const rawKey = `${userId ?? 'guest'}:${sortedItems}:${couponId ?? 'none'}:${deliveryAddressId ?? 'none'}`;
   return crypto.createHash('sha256').update(rawKey).digest('hex');
 }
 
@@ -67,16 +70,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const userId = user?.id || null;
 
   // --- Rate limit ---
   const limiter = getRateLimiter();
-  const limitResult = await limiter.check(`create-order:${user.id}`);
+  const rateLimitKey = userId ? `create-order:${userId}` : `create-order:ip:${request.headers.get('x-forwarded-for') ?? 'unknown'}`;
+  const limitResult = await limiter.check(rateLimitKey);
   if (!limitResult.allowed) {
-    logger.warn('Rate limit exceeded', { userId: user.id });
+    logger.warn('Rate limit exceeded', { userId: rateLimitKey });
     return NextResponse.json(
       { error: 'Too many requests. Please try again shortly.', retryAfterMs: limitResult.retryAfterMs },
       { status: 429 }
@@ -109,6 +110,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // --- Server-side price computation ---
   const productIds = cartItems.map((i) => i.id);
+
+  // Fetch settings directly from DB (Authoritative, bypassing cache)
+  const { data: settings, error: settingsError } = await adminClient
+    .from('store_settings')
+    .select('shipping_charge, free_shipping_threshold')
+    .eq('id', 1)
+    .single();
+
+  if (settingsError || !settings) {
+    logger.error('Failed to fetch shipping settings', { error: settingsError?.message });
+    return NextResponse.json({ error: 'Failed to process order pricing' }, { status: 500 });
+  }
+
   const { data: products, error: productsError } = await adminClient
     .from('products')
     .select('id, name, price, stock_quantity, is_active')
@@ -171,14 +185,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     0
   );
 
-  // Apply coupon discount (server-side)
-  let discountPaise = 0;
-  if (discountAmount && discountAmount > 0) {
-    discountPaise = Math.round(discountAmount * 100);
+  let pricingResult;
+  try {
+    const { result } = await calculateOrderPricing({
+      subtotalPaise,
+      couponId,
+      userId,
+      settings,
+    });
+    pricingResult = result;
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Pricing error' }, { status: 400 });
   }
 
-  const finalPaise = Math.max(subtotalPaise - discountPaise, 0);
-  const totalRupees = finalPaise / 100;
+  // Strict mismatch check: If client claims a discount but provided no coupon, or the amount doesn't match our math exactly.
+  // (Client provides discountAmount in rupees, so we compare directly since pricingResult.discount is in rupees).
+  const clientDiscountRupees = discountAmount ? discountAmount : 0;
+  if (clientDiscountRupees !== pricingResult.discount) {
+    logger.warn('Discount mismatch', { client: clientDiscountRupees, server: pricingResult.discount });
+    return NextResponse.json({ error: 'Discount calculation mismatch. Please refresh and try again.' }, { status: 400 });
+  }
+
+  const finalPaise = Math.round(pricingResult.total * 100);
 
   if (finalPaise > 0 && finalPaise < MIN_ORDER_PAISE) {
     return NextResponse.json(
@@ -187,123 +215,119 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // --- Idempotency key ---
-  const idempotencyKey = computeIdempotencyKey(user.id, validatedCart, couponId);
-  const receipt = `rcpt_${Date.now()}`;
+  // Handle free order routing constraint (must be hit from placeOrderFree action)
+  if (finalPaise === 0) {
+    return NextResponse.json(
+      { error: 'Order is fully discounted. Please use the free order checkout method.' },
+      { status: 400 }
+    );
+  }
 
-  // --- Attempt insert (ON CONFLICT handled via error code) ---
-  const { data: inserted, error: insertError } = await adminClient
+  // Increment coupon usage via RPC (Atomic check-and-increment)
+  if (couponId) {
+    const { data: incrementSuccess, error: incrementError } = await adminClient.rpc('increment_coupon_usage_for_user', {
+      p_coupon_id: couponId,
+      p_user_id: userId,
+    });
+
+    if (incrementError || !incrementSuccess) {
+      return NextResponse.json({ error: 'Coupon usage limit reached or coupon invalid.' }, { status: 400 });
+    }
+  }
+
+  // Generate Idempotency Key
+  const idempotencyKey = computeIdempotencyKey(userId, validatedCart, couponId, deliveryAddressId);
+
+  // --- Create Razorpay Order ---
+  let razorpayOrder;
+  try {
+    razorpayOrder = await razorpay.orders.create({
+      amount: finalPaise,
+      currency: 'INR',
+      receipt: idempotencyKey.substring(0, 40), // receipt max length is 40
+      payment_capture: true,
+    });
+  } catch (error) {
+    if (couponId) {
+      await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId });
+    }
+    logger.error('Razorpay order creation failed', { error });
+    return NextResponse.json({ error: 'Failed to initialize payment gateway' }, { status: 502 });
+  }
+
+  // --- Database Transactions ---
+
+  // 1. Insert Order (with idempotency check via unique constraint)
+  const { data: order, error: orderError } = await adminClient
     .from('orders')
     .insert({
-      user_id: user.id,
-      total_amount: totalRupees,
+      user_id: userId,
+      total_amount: pricingResult.total,
+      shipping_amount: pricingResult.shipping,
       status: 'created',
-      currency: 'INR',
-      receipt,
+      razorpay_order_id: razorpayOrder.id,
       idempotency_key: idempotencyKey,
       ...(couponId ? { coupon_id: couponId } : {}),
-      ...(discountPaise > 0 ? { discount_amount: discountPaise / 100 } : {}),
+      ...(pricingResult.discount > 0 ? { discount_amount: pricingResult.discount } : {}),
       ...(deliveryAddressId ? { delivery_address_id: deliveryAddressId } : {}),
     })
-    .select()
+    .select('id, status')
     .single();
 
-  // --- Handle idempotency conflict ---
-  if (insertError && insertError.code === UNIQUE_VIOLATION_CODE) {
-    return handleIdempotencyConflict(adminClient, idempotencyKey, finalPaise);
+  if (orderError) {
+    if (orderError.code === UNIQUE_VIOLATION_CODE) {
+      // Revert the usage we just incremented (the conflict row already incremented it previously)
+      if (couponId) {
+        await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId });
+      }
+      return handleIdempotencyConflict(adminClient, idempotencyKey);
+    }
+    
+    // Any other error — revert usage and fail
+    if (couponId) {
+      await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId });
+    }
+    logger.error('Database error inserting order', { error: orderError.message });
+    return NextResponse.json({ error: 'Failed to create order in database' }, { status: 500 });
   }
 
-  if (insertError || !inserted) {
-    logger.error('Failed to create order', { error: insertError?.message });
-    return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
-  }
-
-  // --- Insert order_items (persisted at creation time) ---
-  const orderItemsPayload = validatedCart.map((item) => ({
-    order_id: inserted.id as string,
+  // 2. Insert Order Items (Bulk)
+  const orderItems = validatedCart.map((item) => ({
+    order_id: order.id,
     product_id: item.id,
     quantity: item.quantity,
-    price_at_purchase: item.pricePaise / 100,
+    price_at_purchase: item.pricePaise / 100, // Store in rupees
   }));
 
   const { error: itemsError } = await adminClient
     .from('order_items')
-    .insert(orderItemsPayload);
+    .insert(orderItems);
 
   if (itemsError) {
-    // Rollback: cancel the order
-    await adminClient
-      .from('orders')
-      .update({ status: 'cancelled' })
-      .eq('id', inserted.id);
-    logger.error('Failed to insert order_items, order cancelled', {
-      orderId: inserted.id as string,
-      error: itemsError.message,
-    });
-    return NextResponse.json({ error: 'Failed to save order items' }, { status: 500 });
+    // Soft-delete / cancel the order since it failed to build completely
+    await adminClient.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
+    if (couponId) {
+      await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId });
+    }
+    logger.error('Failed to insert order items', { error: itemsError.message, orderId: order.id });
+    return NextResponse.json({ error: 'Failed to finalize order' }, { status: 500 });
   }
 
-  // --- Create Razorpay order ---
-  let rzpOrder: { id: string; amount: string | number; currency: string };
-  try {
-    rzpOrder = await razorpay.orders.create({
-      amount: finalPaise,
-      currency: 'INR',
-      receipt,
-      notes: { internal_order_id: inserted.id as string },
-    });
-  } catch {
-    // Rollback: cancel the order
-    await adminClient
-      .from('orders')
-      .update({ status: 'cancelled' })
-      .eq('id', inserted.id);
-    logger.error('Razorpay order creation failed, order cancelled', {
-      orderId: inserted.id as string,
-    });
-    return NextResponse.json({ error: 'Failed to initiate payment' }, { status: 502 });
-  }
-
-  // --- Update our order with Razorpay's order ID ---
-  await adminClient
-    .from('orders')
-    .update({ razorpay_order_id: rzpOrder.id })
-    .eq('id', inserted.id);
-
-  // --- Log payment event ---
-  await adminClient.from('payment_events').insert({
-    order_id: inserted.id,
-    event_type: 'order.created',
-    raw_payload: {
-      razorpay_order_id: rzpOrder.id,
-      amount_paise: finalPaise,
-      item_count: validatedCart.length,
-    },
-  });
-
-  logger.info('Order created', {
-    orderId: inserted.id as string,
-    razorpayOrderId: rzpOrder.id,
-    amountPaise: finalPaise,
-  });
-
-  const response: CreateOrderResponse = {
-    orderId: rzpOrder.id,
+  // --- Success Response ---
+  return NextResponse.json({
+    orderId: order.id,
     amount: finalPaise,
     currency: 'INR',
     key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-    status: 'created',
-  };
-
-  return NextResponse.json(response);
+    status: order.status,
+  });
 }
 
 // ── Idempotency conflict handler ─────────────────────────────
 
 async function handleIdempotencyConflict(
   adminClient: ReturnType<typeof createAdminClient>,
-  idempotencyKey: string,
-  finalPaise: number
+  idempotencyKey: string
 ): Promise<NextResponse> {
   const { data: existing } = await adminClient
     .from('orders')
@@ -327,22 +351,23 @@ async function handleIdempotencyConflict(
       .eq('id', existing.id)
       .eq('status', 'created');
 
+    if (existing.coupon_id) {
+      await adminClient.rpc('decrement_coupon_usage_for_user', {
+        p_coupon_id: existing.coupon_id as string,
+        p_user_id: existing.user_id as string | null,
+      });
+    }
+
     logger.info('Cancelled stale order for idempotency', { orderId: existing.id as string });
     return NextResponse.json({ error: 'Previous order expired. Please try again.' }, { status: 409 });
   }
 
-  // Recent duplicate — return existing order (if it has a Razorpay order ID)
-  if (existing.razorpay_order_id) {
-    const response: CreateOrderResponse = {
-      orderId: existing.razorpay_order_id as string,
-      amount: finalPaise,
-      currency: (existing.currency as string) ?? 'INR',
-      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-      status: existing.status as string,
-    };
-    return NextResponse.json(response);
-  }
-
-  // Order exists but no Razorpay ID yet (race between creation steps)
-  return NextResponse.json({ error: 'Order is being created. Please wait.' }, { status: 409 });
+  // Return the existing order for payment
+  return NextResponse.json({
+    orderId: existing.id,
+    amount: Math.round((existing.total_amount as number) * 100),
+    currency: 'INR',
+    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    status: existing.status,
+  });
 }

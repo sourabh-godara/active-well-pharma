@@ -74,8 +74,7 @@ export default function FeaturedBundle(): React.JSX.Element {
               </h2>
 
               <p className="text-muted-foreground text-[1.125rem] leading-relaxed mb-8 max-w-[420px]">
-                Our two bestselling formulas combined — detox, collagen, and biotin — for a complete inside-out glow routine. Get Free Shipping on this bundle.
-              </p>
+                Two of our best-sellers, one bundle: our detox formula plus our collagen + biotin blend. Skin support from the inside out, less shopping around. Free shipping on the bundle right now.              </p>
 
               {/* Item list */}
               <ul className="space-y-3.5 mb-10" aria-label="Bundle includes">

@@ -52,7 +52,7 @@ export default function Footer(): React.JSX.Element {
                 Get 15% Off Your First Order
               </h2>
               <p className="text-[15px] text-white/60 leading-relaxed">
-                Exclusive deals, new launches, and evidence-based wellness insights — delivered straight to your inbox.
+                Exclusive deals, new launches, and evidence-based wellness insights delivered straight to your inbox.
               </p>
             </div>
 

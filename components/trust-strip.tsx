@@ -19,7 +19,7 @@ const TRUST_ITEMS = [
   {
     icon: Truck,
     label: 'Free Shipping',
-    sublabel: 'On order above ₹500',
+    sublabel: 'On order above ₹499',
   },
   {
     icon: Lock,
