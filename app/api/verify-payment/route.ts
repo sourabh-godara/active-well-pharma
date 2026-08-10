@@ -10,7 +10,7 @@ import Razorpay from 'razorpay';
 
 // Initialize Razorpay client
 const razorpay = new Razorpay({
-  key_id: paymentEnv.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  key_id: paymentEnv.RAZORPAY_KEY_ID,
   key_secret: paymentEnv.RAZORPAY_KEY_SECRET,
 });
 

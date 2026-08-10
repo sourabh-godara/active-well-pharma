@@ -35,7 +35,7 @@ export default function SettingsPage() {
         if (result.success) {
             toast.success('Settings updated successfully')
         } else {
-            toast.error(result.error || 'Failed to update settings')
+            toast.error(result.error?.message || 'Failed to update settings')
         }
     }
 

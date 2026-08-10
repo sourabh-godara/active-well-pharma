@@ -72,7 +72,7 @@ export async function saveAddress(formData: AddressFormData): Promise<{ success:
 export async function updateAddress(
     id: string,
     formData: Partial<AddressFormData>
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; address?: Address; error?: string }> {
     const supabase = await getSupabase()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, error: 'Not authenticated' }
@@ -84,16 +84,18 @@ export async function updateAddress(
             .eq('user_id', user.id)
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('addresses')
         .update(formData)
         .eq('id', id)
         .eq('user_id', user.id)
+        .select()
+        .single()
 
     if (error) return { success: false, error: error.message }
 
     revalidatePath('/profile')
-    return { success: true }
+    return { success: true, address: data as Address }
 }
 
 // ─── Delete address ───────────────────────────────────────────────────────────

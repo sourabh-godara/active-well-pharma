@@ -63,6 +63,6 @@ export async function updateStoreSettings(settings: StoreSettings): Promise<Acti
         revalidateTag('store_settings', 'default')
         return { success: true }
     } catch (error) {
-        return handleError(error, 'Failed to update store settings', ErrorCode.UPDATE_FAILED)
+        return handleError(error)
     }
 }
