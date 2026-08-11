@@ -6,6 +6,8 @@ import { ActionResponse, handleError, ErrorCode, AuthenticationError } from '@/l
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 
+import { logger } from '@/lib/logger'
+
 export interface StoreSettings {
     shipping_charge: number
     free_shipping_threshold: number
@@ -21,6 +23,11 @@ export async function getStoreSettings(): Promise<StoreSettings> {
         .single()
 
     if (error || !data) {
+        logger.error('[getStoreSettings] Falling back to default shipping settings', {
+            message: error?.message,
+            code: error?.code,
+            hasData: !!data,
+        })
         // Fallback default if not yet initialized
         return {
             shipping_charge: 49.00,

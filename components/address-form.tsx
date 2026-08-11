@@ -21,22 +21,24 @@ const INDIAN_STATES = [
 
 interface AddressFormProps {
     onClose: () => void
-    onSuccess: (address?: Address) => void
+    onSuccess: (address?: Address, guestEmail?: string, replacedAddressId?: string) => void
     existing?: Address | null
+    isGuestCheckout?: boolean
+    hideHeader?: boolean
 }
 
-const defaultForm: AddressFormData = {
-    name: '', phone: '', pincode: '', locality: '',
+const defaultForm: AddressFormData & { email?: string } = {
+    name: '', phone: '', email: '', pincode: '', locality: '',
     address_line: '', city: '', state: '',
     landmark: '', alt_phone: '',
     address_type: 'Home', is_default: false,
 }
 
-export function AddressForm({ onClose, onSuccess, existing }: AddressFormProps) {
-    const [form, setForm] = useState<AddressFormData>(
+export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hideHeader }: AddressFormProps) {
+    const [form, setForm] = useState<AddressFormData & { email?: string }>(
         existing
             ? {
-                name: existing.name, phone: existing.phone, pincode: existing.pincode,
+                name: existing.name, phone: existing.phone, email: '', pincode: existing.pincode,
                 locality: existing.locality, address_line: existing.address_line,
                 city: existing.city, state: existing.state,
                 landmark: existing.landmark ?? '', alt_phone: existing.alt_phone ?? '',
@@ -46,23 +48,31 @@ export function AddressForm({ onClose, onSuccess, existing }: AddressFormProps) 
     )
     const [isPending, startTransition] = useTransition()
 
-    const set = (key: keyof AddressFormData, val: string | boolean) =>
+    const set = (key: keyof (AddressFormData & { email?: string }), val: string | boolean) =>
         setForm(prev => ({ ...prev, [key]: val }))
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         startTransition(async () => {
+            // Strip email out of address form data for DB
+            const { email, ...addressData } = form;
+
+            if (isGuestCheckout) {
+                // Guests save to DB at checkout time now, not here.
+                // We return a mock successful result with a temporary ID.
+                const tempId = existing?.id || crypto.randomUUID();
+                toast.success(existing ? 'Address updated!' : 'Address saved!')
+                onSuccess({ ...addressData, id: tempId, user_id: null } as Address, email, existing ? existing.id : undefined)
+                return;
+            }
+
             const result = existing
-                ? await updateAddress(existing.id, form)
-                : await saveAddress(form)
+                ? await updateAddress(existing.id, addressData)
+                : await saveAddress(addressData)
 
             if (result.success) {
                 toast.success(existing ? 'Address updated!' : 'Address saved!')
-                if (result.address) {
-                    onSuccess(result.address)
-                } else {
-                    onSuccess()
-                }
+                onSuccess(result.address, email, existing ? existing.id : undefined)
             } else {
                 toast.error(result.error ?? 'Failed to save address')
             }
@@ -73,39 +83,36 @@ export function AddressForm({ onClose, onSuccess, existing }: AddressFormProps) 
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <h3 className="text-sm font-bold text-blue-600 uppercase tracking-wider">
-                {existing ? 'Edit Address' : 'Add a New Address'}
-            </h3>
-
-            {/* Use current location button */}
-            {!existing && (
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (!navigator.geolocation) return
-                        navigator.geolocation.getCurrentPosition(() => {
-                            toast.info('Location detected — please fill in the fields manually')
-                        })
-                    }}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
-                >
-                    <MapPin className="h-4 w-4" />
-                    Use my current location
-                </button>
+            {!hideHeader && (
+                <h3 className="text-sm font-bold text-green-600 uppercase tracking-wider mb-2">
+                    {existing ? 'Edit Address' : 'Add a New Address'}
+                </h3>
             )}
 
+
+
             {/* Row 1: Name + Phone */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                    <Label className="text-xs text-muted-foreground">Name</Label>
+                    <Label className="text-xs text-muted-foreground">Full Name <span className="text-red-500">*</span></Label>
                     <Input required value={form.name} onChange={e => set('name', e.target.value)}
                         placeholder="Name" className={`${inputCls} mt-1`} />
                 </div>
-                <div>
-                    <Label className="text-xs text-muted-foreground">10-digit mobile number</Label>
-                    <Input required value={form.phone} onChange={e => set('phone', e.target.value)}
-                        placeholder="10-digit mobile number" maxLength={10}
-                        pattern="[0-9]{10}" className={`${inputCls} mt-1`} />
+                {isGuestCheckout && (
+                    <div>
+                        <Label className="text-xs text-muted-foreground">Email <span className="text-red-500">*</span></Label>
+                        <Input required type="email" value={form.email} onChange={e => set('email', e.target.value)}
+                            placeholder="Email Address" className={`${inputCls} mt-1`} />
+                    </div>
+                )}
+                <div className={isGuestCheckout ? 'md:col-span-2' : ''}>
+                    <Label className="text-xs text-muted-foreground">Phone Number <span className="text-red-500">*</span></Label>
+                    <div className="flex gap-2 mt-1">
+                        <Input required value={form.phone}
+                            onChange={e => set('phone', e.target.value)}
+                            placeholder="10-digit mobile number" maxLength={10}
+                            pattern="[0-9]{10}" className={`${inputCls} flex-1`} />
+                    </div>
                 </div>
             </div>
 
@@ -174,7 +181,7 @@ export function AddressForm({ onClose, onSuccess, existing }: AddressFormProps) 
                             <input type="radio" name="address_type" value={type}
                                 checked={form.address_type === type}
                                 onChange={() => set('address_type', type)}
-                                className="accent-blue-600" />
+                                className="accent-green-600" />
                             {type}
                         </label>
                     ))}
@@ -191,11 +198,11 @@ export function AddressForm({ onClose, onSuccess, existing }: AddressFormProps) 
             {/* Footer buttons */}
             <div className="flex gap-3 pt-2">
                 <Button type="submit" disabled={isPending}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 font-semibold uppercase tracking-wide h-11">
+                    className="bg-green-600 hover:bg-green-700 text-white px-8 font-semibold uppercase tracking-wide h-11">
                     {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'SAVE'}
                 </Button>
                 <button type="button" onClick={onClose}
-                    className="text-blue-600 hover:text-blue-800 font-semibold uppercase tracking-wide text-sm px-4">
+                    className="text-green-600 hover:text-green-800 font-semibold uppercase tracking-wide text-sm px-4">
                     CANCEL
                 </button>
             </div>

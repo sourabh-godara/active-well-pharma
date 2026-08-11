@@ -9,6 +9,8 @@ ALTER TABLE public.addresses ALTER COLUMN user_id DROP NOT NULL;
 -- 2. Update increment_coupon_usage_for_user RPC to skip per-user limits for guests
 -- Guests are effectively allowed to use non-per-user-limit coupons infinitely,
 -- but the global used_count still increments and respects usage_limit.
+DROP FUNCTION IF EXISTS public.increment_coupon_usage_for_user(uuid, uuid);
+
 CREATE OR REPLACE FUNCTION public.increment_coupon_usage_for_user(
   p_coupon_id uuid,
   p_user_id   uuid
@@ -72,6 +74,8 @@ END;
 $$;
 
 -- 3. Update decrement_coupon_usage_for_user RPC to handle guests
+DROP FUNCTION IF EXISTS public.decrement_coupon_usage_for_user(uuid, uuid);
+
 CREATE OR REPLACE FUNCTION public.decrement_coupon_usage_for_user(
   p_coupon_id uuid,
   p_user_id   uuid

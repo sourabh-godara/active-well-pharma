@@ -40,7 +40,9 @@ export default function SignupForm() {
             email: result.data.email,
             password: result.data.password,
             options: {
-                data: { full_name: result.data.fullName },
+                data: { 
+                    full_name: result.data.fullName,
+                },
             },
         })
 

@@ -37,6 +37,10 @@ export async function updateOrderStatus(orderId: string, status: string, oldStat
         })
     }
 
+    // 3. Trigger SMS (sendOrderUpdate internally checks if status is in config)
+    const { sendOrderUpdate } = require('@/lib/sms/send-order-update')
+    await sendOrderUpdate(orderId, status)
+
     revalidatePath('/admin/orders')
 }
 

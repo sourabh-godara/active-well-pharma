@@ -16,9 +16,11 @@ import { calculateOrderPricing } from '@/lib/pricing'
 import { ValidationError } from '@/lib/errors'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const crypto = require('crypto');
+import { getStoreSettings } from '@/app/actions/admin/settings'
 
 function computeIdempotencyKey(
   userId: string | null,
+  guestEmail: string | undefined,
   items: Array<{ id: string; quantity: number }>,
   couponId: string | null | undefined,
   deliveryAddressId: string | null | undefined
@@ -27,7 +29,8 @@ function computeIdempotencyKey(
     .map((i) => `${i.id}:${i.quantity}`)
     .sort()
     .join(',');
-  const rawKey = `${userId ?? 'guest'}:${sortedItems}:${couponId ?? 'none'}:${deliveryAddressId ?? 'none'}`;
+  const identity = userId ?? guestEmail ?? 'guest';
+  const rawKey = `${identity}:${sortedItems}:${couponId ?? 'none'}:${deliveryAddressId ?? 'none'}`;
   return crypto.createHash('sha256').update(rawKey).digest('hex');
 }
 
@@ -35,7 +38,9 @@ function computeIdempotencyKey(
 export async function placeOrderFree(
     cartItems: Array<{ id: string; quantity: number }>,
     couponId?: string | null,
-    deliveryAddressId?: string | null
+    deliveryAddressId?: string | null,
+    guestInfo?: { name: string, phone: string, email: string },
+    guestAddressData?: Record<string, any>
 ): Promise<ActionResponse> {
     try {
         const cookieStore = await cookies()
@@ -47,6 +52,10 @@ export async function placeOrderFree(
 
         if (!Array.isArray(cartItems) || cartItems.length === 0) {
             throw new ValidationError('Cart is empty')
+        }
+
+        if (!userId && !guestInfo?.email) {
+            throw new ValidationError('Email is required for guest checkout')
         }
 
         // Validate delivery address ownership if authenticated
@@ -64,16 +73,8 @@ export async function placeOrderFree(
         // Refetch products and compute subtotal
         const productIds = cartItems.map(item => item.id)
         
-        // Fetch settings directly from DB (Authoritative, bypassing cache)
-        const { data: settings, error: settingsError } = await adminClient
-            .from('store_settings')
-            .select('shipping_charge, free_shipping_threshold')
-            .eq('id', 1)
-            .single()
-
-        if (settingsError || !settings) {
-            throw new ValidationError('Failed to load store settings')
-        }
+        // Fetch authoritative shipping settings securely on the server
+        const settings = await getStoreSettings()
 
         const { data: products } = await adminClient
             .from('products')
@@ -127,6 +128,7 @@ export async function placeOrderFree(
             const { data: incrementSuccess, error: incrementError } = await adminClient.rpc('increment_coupon_usage_for_user', {
                 p_coupon_id: couponId,
                 p_user_id: userId,
+                p_guest_email: !userId ? guestInfo?.email : null,
             })
             if (incrementError || !incrementSuccess) {
                 throw new ValidationError('Coupon usage limit reached')
@@ -134,7 +136,47 @@ export async function placeOrderFree(
         }
 
         // Compute idempotency key
-        const idempotencyKey = computeIdempotencyKey(userId, validatedCart, couponId, deliveryAddressId)
+        const idempotencyKey = computeIdempotencyKey(userId, guestInfo?.email, validatedCart, couponId, deliveryAddressId)
+        
+        // Generate guest tracking token if guest
+        const guestTrackingToken = !userId ? crypto.randomBytes(32).toString('hex') : null;
+
+        // --- Address Snapshot ---
+        let finalDeliveryAddressId = deliveryAddressId;
+        let shippingAddressSnapshot = null;
+
+        const buildSnapshot = (addr: any) => {
+            return {
+            name: addr.name,
+            phone: addr.phone,
+            address_line: addr.address_line,
+            locality: addr.locality,
+            city: addr.city,
+            state: addr.state,
+            pincode: addr.pincode,
+            landmark: addr.landmark,
+            address_type: addr.address_type
+            }
+        }
+
+        if (guestAddressData) {
+            const { data: newAddr, error: addrErr } = await adminClient.from('addresses').insert({
+                ...guestAddressData,
+                id: undefined,
+                user_id: null,
+                is_default: false
+            }).select().single();
+            
+            if (newAddr && !addrErr) {
+                finalDeliveryAddressId = newAddr.id;
+                shippingAddressSnapshot = buildSnapshot(newAddr);
+            }
+        } else if (deliveryAddressId) {
+            const { data: existingAddr } = await adminClient.from('addresses').select('*').eq('id', deliveryAddressId).single();
+            if (existingAddr) {
+                shippingAddressSnapshot = buildSnapshot(existingAddr);
+            }
+        }
 
         // 1. Create order
         const { data: order, error: orderError } = await adminClient
@@ -147,7 +189,14 @@ export async function placeOrderFree(
                 idempotency_key: idempotencyKey,
                 ...(couponId ? { coupon_id: couponId } : {}),
                 ...(pricingResult.discount > 0 ? { discount_amount: pricingResult.discount } : {}),
-                ...(deliveryAddressId ? { delivery_address_id: deliveryAddressId } : {}),
+                ...(finalDeliveryAddressId ? { delivery_address_id: finalDeliveryAddressId } : {}),
+                ...(shippingAddressSnapshot ? { shipping_address: shippingAddressSnapshot } : {}),
+                ...(guestTrackingToken ? { 
+                    guest_tracking_token: guestTrackingToken,
+                    guest_name: guestInfo?.name,
+                    guest_email: guestInfo?.email,
+                    guest_phone: guestInfo?.phone
+                } : {})
             })
             .select()
             .single()
@@ -162,13 +211,13 @@ export async function placeOrderFree(
                 
                 if (existing) {
                     if (couponId) {
-                        await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId })
+                        await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId, p_guest_email: !userId ? guestInfo?.email : null })
                     }
                     return { success: true, data: { orderId: existing.id } }
                 }
             }
             if (couponId) {
-                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId })
+                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId, p_guest_email: !userId ? guestInfo?.email : null })
             }
             throw new DatabaseError(orderError.message, ErrorCode.DATABASE_ERROR)
         }
@@ -188,7 +237,7 @@ export async function placeOrderFree(
         if (itemsError) {
             await adminClient.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
             if (couponId) {
-                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId })
+                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId, p_guest_email: !userId ? guestInfo?.email : null })
             }
             throw new DatabaseError(itemsError.message, ErrorCode.DATABASE_ERROR)
         }
@@ -202,7 +251,7 @@ export async function placeOrderFree(
             // Stock deduction failed — hard rollback
             await adminClient.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
             if (couponId) {
-                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId })
+                await adminClient.rpc('decrement_coupon_usage_for_user', { p_coupon_id: couponId, p_user_id: userId, p_guest_email: !userId ? guestInfo?.email : null })
             }
             throw new ValidationError('Items ran out of stock during checkout')
         }
@@ -210,7 +259,11 @@ export async function placeOrderFree(
         // Successfully placed free order — mark confirmed
         await adminClient.from('orders').update({ status: 'confirmed' }).eq('id', order.id)
 
-        return { success: true, data: { orderId: order.id } }
+        // Send confirmation email
+        const { sendOrderConfirmation } = require('@/lib/email/send-order-confirmation')
+        await sendOrderConfirmation(order.id)
+
+        return { success: true, data: { orderId: order.id, guestTrackingToken } }
     } catch (error) {
         return handleError(error)
     }

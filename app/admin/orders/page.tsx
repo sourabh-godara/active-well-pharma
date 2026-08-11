@@ -31,6 +31,7 @@ export default async function AdminOrdersPage(props: { searchParams: Promise<{ [
                 price_at_purchase,
                 product:products ( name, image_url, price )
             ),
+            shipping_address,
             delivery_address:addresses (*)
         `)
         .order('created_at', { ascending: false })

@@ -172,6 +172,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       orderId: order.id as string,
       stockOk: true,
     });
+
+    // Send order confirmation email
+    const { sendOrderConfirmation } = require('@/lib/email/send-order-confirmation');
+    await sendOrderConfirmation(order.id);
+
+    // Trigger SMS for 'confirmed' state
+    const { sendOrderUpdate } = require('@/lib/sms/send-order-update');
+    await sendOrderUpdate(order.id, 'confirmed');
   } else {
     // If not won, either webhook beat us to it, or it was already confirmed
     await adminClient.from('payment_events').insert({

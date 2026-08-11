@@ -10,7 +10,7 @@ import type { Address } from "@/types/address"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { updatePassword, deleteAccount } from "@/app/actions/profile"
+import { updatePassword, deleteAccount, updatePhone } from "@/app/actions/profile"
 
 type TabKey = "profile" | "password" | "delete"
 
@@ -24,6 +24,23 @@ export default function ProfileClient({ profile, addresses }: ProfileClientProps
     const router = useRouter()
     const supabase = createClient()
     const [isPending, startTransition] = useTransition()
+    const [isEditingPhone, setIsEditingPhone] = useState(false)
+    const [phoneInput, setPhoneInput] = useState(profile?.phone || '')
+
+    const handlePhoneSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        const formData = new FormData(e.currentTarget)
+        startTransition(async () => {
+            const res = await updatePhone(formData)
+            if (res.success) {
+                toast.success('Phone number updated. Please verify it during your next checkout.')
+                setIsEditingPhone(false)
+                router.refresh()
+            } else {
+                toast.error(res.error || 'Failed to update phone number.')
+            }
+        })
+    }
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
@@ -178,6 +195,42 @@ export default function ProfileClient({ profile, addresses }: ProfileClientProps
                                         <div className="space-y-1.5">
                                             <label className="text-xs font-semibold text-gray-500">Member Since</label>
                                             <Input readOnly value={new Date(profile?.created_at).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })} className="bg-gray-50 border-gray-200 text-gray-700" />
+                                        </div>
+                                        <div className="space-y-1.5 md:col-span-2 border-t pt-4 mt-2 border-gray-100">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="text-xs font-semibold text-gray-500">Phone Number</label>
+                                                {!isEditingPhone && (
+                                                    <button onClick={() => setIsEditingPhone(true)} className="text-xs text-green-600 hover:underline">
+                                                        Edit Phone
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {isEditingPhone ? (
+                                                <form onSubmit={handlePhoneSubmit} className="flex gap-2 items-start max-w-sm">
+                                                    <div className="flex-1 space-y-1">
+                                                        <Input 
+                                                            name="phone"
+                                                            type="tel"
+                                                            value={phoneInput}
+                                                            onChange={e => setPhoneInput(e.target.value)}
+                                                            placeholder="10-digit mobile number"
+                                                            required
+                                                            maxLength={10}
+                                                        />
+                                                    </div>
+                                                    <Button type="submit" disabled={isPending}>Save</Button>
+                                                    <Button type="button" variant="outline" onClick={() => { setIsEditingPhone(false); setPhoneInput(profile?.phone || '') }}>Cancel</Button>
+                                                </form>
+                                            ) : (
+                                                <div className="flex items-center gap-3">
+                                                    <Input readOnly value={profile?.phone || 'Not provided'} className="bg-gray-50 border-gray-200 text-gray-700 max-w-[240px]" />
+                                                    {profile?.phone && (
+                                                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${profile?.phone_verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                            {profile?.phone_verified ? 'Verified' : 'Unverified'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

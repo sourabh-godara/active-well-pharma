@@ -130,6 +130,7 @@ export const getAdminOrders = unstable_cache(
         coupon_id,
         discount_amount,
         delivery_address_id,
+        shipping_address,
         order_items (
           id,
           product_id,

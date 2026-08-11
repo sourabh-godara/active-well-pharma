@@ -188,6 +188,16 @@ async function handlePaymentCaptured(
       orderId,
       stockOk: result?.stock_ok as boolean,
     });
+    
+    if (result?.won && result?.stock_ok !== false) {
+      // Send order confirmation email
+      const { sendOrderConfirmation } = require('@/lib/email/send-order-confirmation');
+      await sendOrderConfirmation(orderId);
+      
+      // Trigger SMS for 'confirmed' state
+      const { sendOrderUpdate } = require('@/lib/sms/send-order-update');
+      await sendOrderUpdate(orderId, 'confirmed');
+    }
   }
 }
 

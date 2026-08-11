@@ -64,7 +64,7 @@ export default function OrderRow({ order, isNeedsAttention }: { order: any, isNe
         setExpanded(v => !v)
     }
 
-    const addr = order.delivery_address
+    const addr = order.shipping_address || order.delivery_address
     const items: any[] = order.order_items ?? []
 
     const formatAddr = (a: any) => {

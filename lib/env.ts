@@ -13,6 +13,7 @@ const REQUIRED_VARS = [
   'RAZORPAY_WEBHOOK_SECRET',
   'NEXT_PUBLIC_SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
+  'RESEND_API_KEY',
 ] as const;
 
 type PaymentEnv = {
@@ -21,6 +22,9 @@ type PaymentEnv = {
   readonly RAZORPAY_WEBHOOK_SECRET: string;
   readonly SUPABASE_URL: string;
   readonly SUPABASE_SERVICE_ROLE_KEY: string;
+  readonly RESEND_API_KEY: string;
+  readonly MSG91_AUTH_KEY?: string; // Optional — COD guest orders disabled if missing
+  readonly MSG91_TEMPLATE_ID?: string;
 };
 
 function validatePaymentEnv(): PaymentEnv {
@@ -61,6 +65,9 @@ function validatePaymentEnv(): PaymentEnv {
     RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET!,
     SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    RESEND_API_KEY: process.env.RESEND_API_KEY!,
+    MSG91_AUTH_KEY: process.env.MSG91_AUTH_KEY,
+    MSG91_TEMPLATE_ID: process.env.MSG91_TEMPLATE_ID,
   };
 }
 
