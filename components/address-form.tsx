@@ -62,7 +62,7 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
                 // We return a mock successful result with a temporary ID.
                 const tempId = existing?.id || crypto.randomUUID();
                 toast.success(existing ? 'Address updated!' : 'Address saved!')
-                onSuccess({ ...addressData, id: tempId, user_id: null } as Address, email, existing ? existing.id : undefined)
+                onSuccess({ ...addressData, id: tempId, user_id: null } as unknown as Address, email, existing ? existing.id : undefined)
                 return;
             }
 
