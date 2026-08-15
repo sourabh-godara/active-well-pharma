@@ -59,7 +59,7 @@ export async function uploadProductImages(productId: string, formData: FormData)
 
             // Upload to Storage
             const { error: uploadError } = await supabase.storage
-                .from('products')
+                .from('image-storage')
                 .upload(filePath, file)
 
             if (uploadError) {
@@ -69,7 +69,7 @@ export async function uploadProductImages(productId: string, formData: FormData)
 
             // Get Public URL
             const { data: { publicUrl } } = supabase.storage
-                .from('products')
+                .from('image-storage')
                 .getPublicUrl(filePath)
 
             // Determine next order_index
@@ -100,7 +100,7 @@ export async function uploadProductImages(productId: string, formData: FormData)
             if (dbError) {
                 console.error('DB Insert failed:', dbError)
                 // Cleanup storage
-                await supabase.storage.from('products').remove([filePath])
+                await supabase.storage.from('image-storage').remove([filePath])
             } else {
                 uploadedImages.push(inserted)
             }
@@ -132,12 +132,10 @@ export async function deleteProductImage(imageId: string, productId: string) {
         if (fetchError || !image) return { error: 'Image not found' }
 
         // Extract file path from URL
-        // URL format: .../storage/v1/object/public/products/products/productId/filename
-        // We stored "products/productId/filename" in bucket "products"
-        // But getPublicUrl returns full URL.
+        // URL format: .../storage/v1/object/public/image-storage/products/productId/filename
         const urlObj = new URL(image.image_url)
-        // Path after /public/products/ is the file path
-        const filePath = urlObj.pathname.split('/public/products/')[1]
+        // Path after /public/image-storage/ is the file path
+        const filePath = urlObj.pathname.split('/public/image-storage/')[1]
 
         if (!filePath) {
             // Fallback if URL parsing fails or format is different
@@ -146,7 +144,7 @@ export async function deleteProductImage(imageId: string, productId: string) {
         } else {
             // Delete from Storage
             const { error: storageError } = await supabase.storage
-                .from('products')
+                .from('image-storage')
                 .remove([decodeURIComponent(filePath)])
 
             if (storageError) console.error('Storage delete error:', storageError)

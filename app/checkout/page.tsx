@@ -330,7 +330,7 @@ function CheckoutInner(): React.ReactElement {
 
 
 
-            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 w-full flex-grow">
+            <main className="mx-auto max-w-7xl px-4 py-8 pb-24 lg:pb-8 sm:px-6 lg:px-8 w-full flex-grow">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                     {/* ── Left Column: Delivery Address ── */}
@@ -403,7 +403,7 @@ function CheckoutInner(): React.ReactElement {
                                         <div key={item.id} className="flex gap-4">
                                             {item.image_url ? (
                                                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-gray-200 bg-white">
-                                                    <Image src={item.image_url} alt={item.name} fill className="object-contain" />
+                                                    <Image src={item.image_url} alt={item.name} fill unoptimized className="object-contain" />
                                                 </div>
                                             ) : (
                                                 <div className="h-16 w-16 shrink-0 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center">
@@ -521,7 +521,7 @@ function CheckoutInner(): React.ReactElement {
             </main>
 
             {/* ── Footer Trust Badges ── */}
-            <footer className="border-t border-gray-200 bg-white py-8 mt-auto">
+            <footer className="hidden md:block border-t border-gray-200 bg-white py-8 mt-auto">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">

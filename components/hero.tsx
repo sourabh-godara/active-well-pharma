@@ -14,18 +14,31 @@ const STARS = Array.from({ length: 5 })
 export default function Hero(): React.JSX.Element {
   return (
     <section
-      className="relative overflow-hidden bg-[#1a4a2e]"
+      className="relative overflow-hidden bg-black"
       style={{
-        background: `
-          radial-gradient(ellipse at 78% 15%, #235d39 0%, transparent 52%),
-          radial-gradient(ellipse at 18% 88%, #0d2c1a 0%, transparent 48%),
-          radial-gradient(ellipse at 50% 50%, #1c5232 0%, transparent 80%),
-          #1a4a2e
-        `,
         minHeight: '65vh',
       }}
       aria-label="Hero — ActiveWell Pharma"
     >
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-70 pointer-events-none"
+      >
+        <source src="/hero-video.mp4" type="video/mp4" />
+      </video>
+
+      {/* Black gradient overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)'
+        }}
+        aria-hidden="true"
+      />
       {/* Subtle grain texture overlay */}
       <div
         className="absolute inset-0 opacity-[0.015] pointer-events-none"
@@ -45,19 +58,12 @@ export default function Hero(): React.JSX.Element {
           >
             Plant-Powered.
             <br />
-            <span
-              style={{
-                background: 'linear-gradient(135deg, #7dd3a4 0%, #a8ebc3 50%, #6fcf97 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
+            <span className=' text-green-300'>
               Beautifully Effective.
             </span>
           </h1>
 
-          <p className="text-[1.125rem] leading-relaxed text-white/75 max-w-[460px] mb-10 font-normal">
+          <p className="text-[1.125rem] shadow-2xlleading-relaxed text-white/75 max-w-[460px] mb-10 font-normal">
             Clinically-inspired supplements formulated with nature's finest. For radiant skin, stronger hair, and everyday wellness.
           </p>
 
@@ -112,7 +118,7 @@ export default function Hero(): React.JSX.Element {
         </div>
 
         {/* ── Image side ── */}
-        <div className="flex-1 relative flex items-center justify-center w-full mt-8 lg:mt-0">
+        <div className="flex-1 hidden md:block relative flex items-center justify-center w-full mt-8 lg:mt-0">
           <div
             className="relative w-full scale-110 lg:scale-125 translate-y-4 lg:translate-y-8"
             style={{
@@ -120,7 +126,7 @@ export default function Hero(): React.JSX.Element {
             }}
           >
             <Image
-              src="/hero02.png"
+              src="/hero-2.png"
               alt="ActiveWell Pharma — premium plant-based wellness products"
               fill
               className="object-contain object-center transition-transform duration-700 ease-out hover:scale-[1.02]"

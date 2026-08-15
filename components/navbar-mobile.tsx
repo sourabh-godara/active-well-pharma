@@ -1,13 +1,13 @@
 'use client'
 
-import { Home, ShoppingCart, User, LogIn, Search } from 'lucide-react'
+import { Home, ShoppingCart, User, LogIn, Package } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useUser } from '@/app/context/user-context'
 
 const TABS = [
   { icon: Home, label: 'Home', href: '/' },
-  { icon: Search, label: 'Search', href: '/shop' },
+  { icon: Package, label: 'Orders', href: '/orders' },
   { icon: ShoppingCart, label: 'Cart', href: '/cart' },
 ] as const
 

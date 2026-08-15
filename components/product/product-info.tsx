@@ -48,10 +48,7 @@ export function ProductInfo({ product, averageRating, totalReviews }: ProductInf
             {/* Price */}
             <div className="flex items-baseline gap-3 flex-wrap">
                 <p className="text-3xl font-bold text-foreground">₹{product.price.toLocaleString()}</p>
-                <p className="text-base text-muted-foreground line-through">₹{originalPrice.toLocaleString()}</p>
-                <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
-                    Save ₹{savings.toLocaleString()}
-                </span>
+
             </div>
 
             {/* Dynamic Key Benefits from DB */}
@@ -60,7 +57,7 @@ export function ProductInfo({ product, averageRating, totalReviews }: ProductInf
             {/* Stock */}
             {product.stock_quantity > 0 ? (
                 <p className="text-sm text-green-600 font-medium">
-                    ✓ In stock ({product.stock_quantity} available)
+                    ✓ In stock
                 </p>
             ) : (
                 <p className="text-sm text-destructive font-medium">Out of stock</p>

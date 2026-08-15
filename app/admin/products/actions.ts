@@ -183,6 +183,12 @@ export async function deleteProduct(productId: string): Promise<ActionResponse> 
 
         if (fetchError) throw new DatabaseError('Product not found', ErrorCode.RECORD_NOT_FOUND)
 
+        // Fetch gallery images to delete them from storage too
+        const { data: galleryImages } = await supabase
+            .from('product_images')
+            .select('image_url')
+            .eq('product_id', validatedData.id)
+
         const { error: deleteError } = await supabase
             .from('products')
             .delete()
@@ -191,9 +197,28 @@ export async function deleteProduct(productId: string): Promise<ActionResponse> 
         if (deleteError) throw new DatabaseError(deleteError.message, ErrorCode.DATABASE_ERROR)
 
         if (product?.image_url) {
-            const pathParts = product.image_url.split('/image-storage/')
-            if (pathParts.length > 1) {
-                await supabase.storage.from('image-storage').remove([pathParts[1]])
+            try {
+                const urlObj = new URL(product.image_url)
+                const filePath = urlObj.pathname.split('/public/image-storage/')[1]
+                if (filePath) {
+                    await supabase.storage.from('image-storage').remove([decodeURIComponent(filePath)])
+                }
+            } catch (e) {
+                console.error('Failed to parse/delete primary image:', e)
+            }
+        }
+
+        if (galleryImages && galleryImages.length > 0) {
+            const pathsToRemove = galleryImages.map(img => {
+                try {
+                    const urlObj = new URL(img.image_url)
+                    const filePath = urlObj.pathname.split('/public/image-storage/')[1]
+                    return filePath ? decodeURIComponent(filePath) : null
+                } catch { return null }
+            }).filter(Boolean) as string[]
+            
+            if (pathsToRemove.length > 0) {
+                await supabase.storage.from('image-storage').remove(pathsToRemove)
             }
         }
 
@@ -251,6 +276,13 @@ export async function updateProduct(prevState: any, formData: FormData): Promise
         // Handle primary image upload
         const imageFile = formData.get('image') as File
         if (imageFile && imageFile.size > 0) {
+            // Fetch old image first
+            const { data: oldProduct } = await supabase
+                .from('products')
+                .select('image_url')
+                .eq('id', id)
+                .single()
+
             const fileExt = imageFile.name.split('.').pop()
             const fileName = `${crypto.randomUUID()}.${fileExt}`
 
@@ -267,6 +299,19 @@ export async function updateProduct(prevState: any, formData: FormData): Promise
                 .getPublicUrl(fileName)
 
             updates.image_url = publicUrl
+
+            // Clean up old image
+            if (oldProduct?.image_url) {
+                try {
+                    const urlObj = new URL(oldProduct.image_url)
+                    const filePath = urlObj.pathname.split('/public/image-storage/')[1]
+                    if (filePath) {
+                        await supabase.storage.from('image-storage').remove([decodeURIComponent(filePath)])
+                    }
+                } catch (e) {
+                    console.error('Failed to clean up old image:', e)
+                }
+            }
         }
 
         // Update product

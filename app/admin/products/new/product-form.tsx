@@ -4,7 +4,7 @@ import { useActionState, useCallback, useEffect, useRef, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { toast } from 'sonner'
 import Image from 'next/image'
-import { ImagePlus, Plus, X, Loader2, Check, Trash2 } from 'lucide-react'
+import { ImagePlus, Plus, X, Loader2, Check, Trash2, UploadCloud } from 'lucide-react'
 import { type ActionResponse } from '@/lib/errors'
 import { ProductWithGallery } from '@/types'
 import { createProduct, updateProduct } from '@/app/admin/products/actions'
@@ -26,14 +26,13 @@ export interface ProductFormProps {
     product?: ProductWithGallery
 }
 
-
 function SubmitButton({ isCreate }: { isCreate: boolean }) {
     const { pending } = useFormStatus()
     return (
         <button
             type="submit"
             disabled={pending}
-            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
             {pending && <Loader2 className="h-4 w-4 animate-spin" />}
             {pending ? (isCreate ? 'Creating…' : 'Saving…') : (isCreate ? 'Create Product' : 'Save Changes')}
@@ -41,20 +40,17 @@ function SubmitButton({ isCreate }: { isCreate: boolean }) {
     )
 }
 
-
 const inputCls =
-    'block w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500'
-
+    'block w-full rounded-lg border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all'
 
 function SectionDivider({ title, description }: { title: string; description?: string }) {
     return (
-        <div className="border-t border-gray-200 pt-6">
-            <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
-            {description && <p className="mt-0.5 text-xs text-gray-500">{description}</p>}
+        <div className="border-b border-gray-100 pb-4 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+            {description && <p className="mt-1 text-sm text-gray-500">{description}</p>}
         </div>
     )
 }
-
 
 export default function ProductForm({ product }: ProductFormProps) {
     const isCreate = !product
@@ -65,6 +61,8 @@ export default function ProductForm({ product }: ProductFormProps) {
         initialState
     )
 
+    const [primaryImagePreview, setPrimaryImagePreview] = useState<string | null>(product?.image_url || null)
+    
     const [gallery, setGallery] = useState<GalleryPreview[]>(() =>
         (product?.images ?? []).map(img => ({ id: img.id, url: img.image_url, isExisting: true }))
     )
@@ -82,6 +80,16 @@ export default function ProductForm({ product }: ProductFormProps) {
         if (!state.success) toast.error((state as any).error?.message ?? 'Something went wrong')
         else if (!isCreate) toast.success('Product updated!')
     }, [state, isCreate])
+
+    const handlePrimaryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            if (primaryImagePreview && primaryImagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(primaryImagePreview)
+            }
+            setPrimaryImagePreview(URL.createObjectURL(file))
+        }
+    }
 
     const handleGalleryFiles = useCallback((files: FileList | null) => {
         if (!files) return
@@ -101,6 +109,8 @@ export default function ProductForm({ product }: ProductFormProps) {
             if (result.error) {
                 toast.error(result.error)
                 setGallery(prev => [...prev, item])
+            } else {
+                toast.success('Gallery image deleted')
             }
         } else {
             if (item.url.startsWith('blob:')) URL.revokeObjectURL(item.url)
@@ -117,8 +127,6 @@ export default function ProductForm({ product }: ProductFormProps) {
         setBenefitInput('')
     }
 
-    // Wrap the server action to inject gallery files from React state
-    // into FormData — the native file input only holds the last batch
     const wrappedAction = useCallback(
         (formData: FormData) => {
             formData.delete('gallery_images')
@@ -133,177 +141,215 @@ export default function ProductForm({ product }: ProductFormProps) {
     )
 
     return (
-        <form action={wrappedAction}>
+        <form action={wrappedAction} className="max-w-4xl mx-auto pb-12">
             {/* Hidden fields */}
             {product && <input type="hidden" name="id" value={product.id} />}
             <input type="hidden" name="benefits" value={JSON.stringify(benefits.map(b => b.text))} />
 
-            {/* ── Single card ─────────────────────────────────────── */}
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div className="px-6 py-6 space-y-5">
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-gray-900">
+                    {isCreate ? 'Create New Product' : 'Edit Product'}
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                    {isCreate
+                        ? 'Fill in the details below to add a new product to your catalog.'
+                        : `Updating details for: ${product?.name}`}
+                </p>
+            </div>
 
-                    {/* Card title */}
-                    <div>
-                        <h1 className="text-base font-semibold text-gray-900">
-                            {isCreate ? 'Create New Product' : 'Edit Product'}
-                        </h1>
-                        <p className="mt-0.5 text-xs text-gray-500">
-                            {isCreate
-                                ? 'Fill in all sections below and click Create Product.'
-                                : `Editing: ${product?.name}`}
-                        </p>
-                    </div>
-
-                    {/* ── Section 1: Product Details ─────────────── */}
-                    <SectionDivider title="Product Details" description="Core information visible to customers." />
-
-                    {/* Name */}
-                    <div>
-                        <label htmlFor="name" className="block text-xs font-medium text-gray-700 mb-1">
-                            Product Name <span className="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="name" id="name" required defaultValue={product?.name}
-                            placeholder="e.g. Green Detox Elixir" className={inputCls} />
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                        <label htmlFor="description" className="block text-xs font-medium text-gray-700 mb-1">
-                            Description <span className="text-red-500">*</span>
-                        </label>
-                        <textarea name="description" id="description" rows={3} required
-                            defaultValue={product?.description ?? ''}
-                            placeholder="Describe the product…"
-                            className={inputCls} />
-                    </div>
-
-                    {/* Price + Stock */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="price" className="block text-xs font-medium text-gray-700 mb-1">
-                                Price (₹) <span className="text-red-500">*</span>
-                            </label>
-                            <input type="number" name="price" id="price" step="0.01" min="0" required
-                                defaultValue={product?.price} placeholder="499" className={inputCls} />
-                        </div>
-                        <div>
-                            <label htmlFor="stock_quantity" className="block text-xs font-medium text-gray-700 mb-1">
-                                Stock Quantity <span className="text-red-500">*</span>
-                            </label>
-                            <input type="number" name="stock_quantity" id="stock_quantity" min="0" required
-                                defaultValue={product?.stock_quantity} placeholder="100" className={inputCls} />
-                        </div>
-                    </div>
-
-                    {/* Primary Image */}
-                    <div>
-                        <label htmlFor="image" className="block text-xs font-medium text-gray-700 mb-1">
-                            Primary Image {isCreate && <span className="text-red-500">*</span>}
-                            {!isCreate && <span className="text-gray-400 font-normal"> — leave blank to keep current</span>}
-                        </label>
-                        {product?.image_url && (
-                            <div className="mb-2 relative h-16 w-16 rounded-lg overflow-hidden border border-gray-200">
-                                <Image src={product.image_url} alt="Current" fill className="object-cover" unoptimized />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* ── Left Column: Main Details ── */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                        <SectionDivider title="General Information" />
+                        
+                        <div className="space-y-6">
+                            {/* Name */}
+                            <div>
+                                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Product Name <span className="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="name" id="name" required defaultValue={product?.name}
+                                    placeholder="e.g. Green Detox Elixir" className={inputCls} />
                             </div>
-                        )}
-                        <input type="file" name="image" id="image" accept="image/*" required={isCreate}
-                            className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
-                    </div>
 
-                    {/* Active */}
-                    <div className="flex items-center gap-2.5">
-                        <input id="is_active" name="is_active" type="checkbox"
-                            defaultChecked={product?.is_active ?? true}
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                        <label htmlFor="is_active" className="text-sm text-gray-700">Active — visible in the store</label>
-                    </div>
+                            {/* Description */}
+                            <div>
+                                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Description <span className="text-red-500">*</span>
+                                </label>
+                                <textarea name="description" id="description" rows={4} required
+                                    defaultValue={product?.description ?? ''}
+                                    placeholder="Describe the product and its benefits…"
+                                    className={inputCls} />
+                            </div>
 
-                    {/* ── Section 2: Image Gallery ───────────────── */}
-                    <SectionDivider
-                        title="Image Gallery"
-                        description={`Additional images shown in the product gallery. ${gallery.length}/5 used.`}
-                    />
-
-                    {gallery.length > 0 && (
-                        <div className="grid grid-cols-5 gap-2">
-                            {gallery.map(item => (
-                                <div key={item.id} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                                    <Image src={item.url} alt="Gallery" fill className="object-cover" unoptimized />
-                                    {!item.isExisting && (
-                                        <span className="absolute top-1 left-1 rounded bg-indigo-600 px-1 py-0.5 text-[9px] font-semibold text-white leading-none">New</span>
-                                    )}
-                                    <button type="button" onClick={() => removeGalleryItem(item)}
-                                        className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                        aria-label="Remove">
-                                        <X className="h-3 w-3" />
-                                    </button>
+                            {/* Price + Stock */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                        Price (₹) <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <span className="text-gray-500 sm:text-sm">₹</span>
+                                        </div>
+                                        <input type="number" name="price" id="price" step="0.01" min="0" required
+                                            defaultValue={product?.price} placeholder="0.00" className={`${inputCls} pl-8`} />
+                                    </div>
                                 </div>
-                            ))}
+                                <div>
+                                    <label htmlFor="stock_quantity" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                        Stock Quantity <span className="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" name="stock_quantity" id="stock_quantity" min="0" required
+                                        defaultValue={product?.stock_quantity} placeholder="100" className={inputCls} />
+                                </div>
+                            </div>
                         </div>
-                    )}
-
-                    {gallery.length < 5 && (
-                        <>
-                            <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden"
-                                onChange={e => { handleGalleryFiles(e.target.files); e.target.value = '' }} />
-                            <button type="button" onClick={() => galleryInputRef.current?.click()}
-                                className="flex items-center gap-2 w-full justify-center rounded-md border border-dashed border-gray-300 px-4 py-2.5 text-sm text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
-                                <ImagePlus className="h-4 w-4" />
-                                Add images ({5 - gallery.length} remaining)
-                            </button>
-                        </>
-                    )}
-
-                    {/* ── Section 3: Key Benefits ────────────────── */}
-                    <SectionDivider
-                        title="Key Benefits"
-                        description={`Shown as checkmarks on the product page. ${benefits.length}/6 used.`}
-                    />
-
-                    <div className="flex gap-2">
-                        <input type="text" value={benefitInput} onChange={e => setBenefitInput(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addBenefit() } }}
-                            placeholder="e.g. Visible glow in 4 weeks" maxLength={120}
-                            disabled={benefits.length >= 6}
-                            className={`${inputCls} flex-1`} />
-                        <button type="button" onClick={addBenefit}
-                            disabled={!benefitInput.trim() || benefits.length >= 6}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                            <Plus className="h-4 w-4" /> Add
-                        </button>
                     </div>
 
-                    {benefits.length === 0 ? (
-                        <p className="text-center text-xs text-gray-400 border-2 border-dashed border-gray-200 rounded-lg py-4">
-                            No benefits added yet.
-                        </p>
-                    ) : (
-                        <ul className="space-y-2">
-                            {benefits.map(b => (
-                                <li key={b.id} className="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100">
-                                        <Check className="h-3 w-3 text-green-600 stroke-3" />
-                                    </span>
-                                    <span className="flex-1 text-sm text-gray-700 truncate">{b.text}</span>
-                                    <button type="button" onClick={() => setBenefits(prev => prev.filter(x => x.id !== b.id))}
-                                        className="text-gray-400 hover:text-red-500 transition-colors" aria-label="Remove">
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                        <SectionDivider title="Key Benefits" description={`Highlight the main selling points. ${benefits.length}/6 used.`} />
+                        
+                        <div className="space-y-4">
+                            <div className="flex gap-3">
+                                <input type="text" value={benefitInput} onChange={e => setBenefitInput(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addBenefit() } }}
+                                    placeholder="e.g. Visible glow in 4 weeks" maxLength={120}
+                                    disabled={benefits.length >= 6}
+                                    className={`${inputCls} flex-1`} />
+                                <button type="button" onClick={addBenefit}
+                                    disabled={!benefitInput.trim() || benefits.length >= 6}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-600 hover:bg-indigo-100 disabled:opacity-50 transition-colors">
+                                    <Plus className="h-4 w-4" /> Add
+                                </button>
+                            </div>
 
+                            {benefits.length === 0 ? (
+                                <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                    <p className="text-sm text-gray-500">No benefits added yet.</p>
+                                </div>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {benefits.map(b => (
+                                        <li key={b.id} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white shadow-sm px-4 py-3 group">
+                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50">
+                                                <Check className="h-3.5 w-3.5 text-emerald-600 stroke-[3]" />
+                                            </span>
+                                            <span className="flex-1 text-sm font-medium text-gray-700">{b.text}</span>
+                                            <button type="button" onClick={() => setBenefits(prev => prev.filter(x => x.id !== b.id))}
+                                                className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all bg-red-50 rounded-md p-1.5" aria-label="Remove">
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                {/* ── Footer ─────────────────────────────────────── */}
-                <div className="flex items-center gap-3 border-t border-gray-200 px-6 py-4">
-                    <SubmitButton isCreate={isCreate} />
-                    <a href="/admin/products"
-                        className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                        Cancel
-                    </a>
+                {/* ── Right Column: Media & Status ── */}
+                <div className="space-y-8">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                        <SectionDivider title="Media" />
+                        
+                        <div className="space-y-6">
+                            {/* Primary Image */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Primary Image {isCreate && <span className="text-red-500">*</span>}
+                                </label>
+                                
+                                <div className="relative group">
+                                    <div className="aspect-square w-full rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors overflow-hidden relative flex flex-col items-center justify-center cursor-pointer">
+                                        {primaryImagePreview ? (
+                                            <Image src={primaryImagePreview} alt="Primary Preview" fill className="object-contain p-2" unoptimized />
+                                        ) : (
+                                            <div className="text-center p-4">
+                                                <UploadCloud className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                                                <p className="text-sm text-gray-500 font-medium">Click to upload</p>
+                                                <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                                            </div>
+                                        )}
+                                        {/* Invisible file input covering the area */}
+                                        <input type="file" name="image" id="image" accept="image/*" required={isCreate}
+                                            onChange={handlePrimaryImageChange}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                    </div>
+                                    {primaryImagePreview && (
+                                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-semibold shadow-sm pointer-events-none">
+                                            Primary
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Gallery Images */}
+                            <div className="pt-4 border-t border-gray-100">
+                                <div className="flex items-center justify-between mb-3">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Gallery
+                                    </label>
+                                    <span className="text-xs text-gray-400">{gallery.length}/5 used</span>
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                    {gallery.map(item => (
+                                        <div key={item.id} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                            <Image src={item.url} alt="Gallery" fill className="object-contain p-1" unoptimized />
+                                            {!item.isExisting && (
+                                                <span className="absolute bottom-1 left-1 rounded bg-indigo-600 px-1.5 py-0.5 text-[9px] font-semibold text-white leading-none shadow-sm">New</span>
+                                            )}
+                                            <button type="button" onClick={() => removeGalleryItem(item)}
+                                                className="absolute top-1 right-1 h-6 w-6 rounded-full bg-white/90 shadow-sm text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                                                aria-label="Remove">
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {gallery.length < 5 && (
+                                    <>
+                                        <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden"
+                                            onChange={e => { handleGalleryFiles(e.target.files); e.target.value = '' }} />
+                                        <button type="button" onClick={() => galleryInputRef.current?.click()}
+                                            className="flex items-center gap-2 w-full justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-600 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all">
+                                            <ImagePlus className="h-4 w-4" />
+                                            Add Gallery Images
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                        <SectionDivider title="Visibility" />
+                        <label className="flex items-start gap-3 cursor-pointer group">
+                            <div className="flex items-center h-5">
+                                <input id="is_active" name="is_active" type="checkbox"
+                                    defaultChecked={product?.is_active ?? true}
+                                    className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">Active Status</span>
+                                <span className="text-xs text-gray-500 mt-0.5">When disabled, this product will be hidden from the storefront.</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
+            </div>
+
+            {/* ── Sticky Footer Actions ── */}
+            <div className="fixed bottom-0 left-0 right-0 sm:left-64 z-10 bg-white/80 backdrop-blur-md border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <a href="/admin/products"
+                    className="text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2 transition-colors">
+                    Cancel
+                </a>
+                <SubmitButton isCreate={isCreate} />
             </div>
         </form>
     )
