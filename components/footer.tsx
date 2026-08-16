@@ -12,11 +12,11 @@ const SOCIAL_LINKS = [
 const FOOTER_COLS = [
   {
     heading: 'About',
-    links: [{ name: 'Our Story', url: '/about' }, { name: 'Blog', url: '/blog' }],
+    links: [{ name: 'Our Story', url: '/about' }, { name: 'Blog', url: '/blog/plant-collagen-skin-elasticity' }],
   },
   {
     heading: 'Support',
-    links: [{ name: 'FAQs', url: '/faqs' }, { name: 'Shipping & Returns', url: '/shipping-and-delivery-policy' }, { name: 'Track Order', url: '/track-order' }, { name: 'Contact Us', url: '/contact-us' }],
+    links: [{ name: 'FAQs', url: '/faqs' }, { name: 'Shipping & Returns', url: '/shipping-delivery-policy' }, { name: 'Track Order', url: '/orders' }, { name: 'Contact Us', url: '/contact-us' }],
   },
   {
     heading: 'Policies',

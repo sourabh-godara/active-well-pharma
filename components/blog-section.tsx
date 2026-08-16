@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, Clock } from 'lucide-react'
 
 const ARTICLES = [
@@ -8,9 +9,10 @@ const ARTICLES = [
     excerpt:
       'Collagen production naturally declines in your 20s. Here\'s how plant-based collagen precursors can help support your skin\'s natural structure without animal derivatives.',
     readTime: '5 min read',
-    href: '#',
+    href: '/blog/plant-collagen-skin-elasticity',
     bg: '#eaf6ee',
     categoryColor: '#215732',
+    image: '/blog-1.png',
   },
   {
     category: 'Hair Care',
@@ -18,9 +20,10 @@ const ARTICLES = [
     excerpt:
       'Both are popular for hair health — but they work differently. We break down the clinical science so you can choose the right formula for your specific needs.',
     readTime: '4 min read',
-    href: '#',
+    href: '/blog/biotin-vs-collagen-hair-growth',
     bg: '#fde8e2',
     categoryColor: '#e8614a',
+    image: '/blog-2.png',
   },
   {
     category: 'Wellness',
@@ -28,9 +31,10 @@ const ARTICLES = [
     excerpt:
       'Starting your day right doesn\'t have to be complicated. Our nutritionists share the simple daily stack thousands of customers swear by for sustained energy.',
     readTime: '6 min read',
-    href: '#',
+    href: '/blog/morning-supplement-stack',
     bg: '#fef5d4',
     categoryColor: '#b8860b',
+    image: '/blog-3.png',
   },
 ] as const
 
@@ -74,14 +78,19 @@ export default function BlogSection(): React.JSX.Element {
                 className="group flex flex-col md:flex-row gap-0 bg-white rounded-3xl overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all duration-500 ease-out border border-border/50"
                 aria-label={`Read: ${article.title}`}
               >
-                {/* Image placeholder (left, md+) */}
+                {/* Image (left, md+) */}
                 <div
-                  className="md:w-[280px] lg:w-[320px] md:shrink-0 h-48 md:h-auto flex items-center justify-center text-5xl select-none relative overflow-hidden"
+                  className="md:w-[280px] lg:w-[320px] md:shrink-0 h-48 md:h-auto flex items-center justify-center select-none relative overflow-hidden"
                   style={{ backgroundColor: article.bg }}
                   aria-hidden="true"
                 >
-                  <span className="group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-700 ease-out relative z-10">📖</span>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
+                  <Image
+                    src={article.image}
+                    alt={article.title}
+                    fill
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500 z-10" />
                 </div>
 
                 {/* Content */}
@@ -123,7 +132,7 @@ export default function BlogSection(): React.JSX.Element {
             </article>
           ))}
         </div>
-        
+
         {/* Mobile View All link */}
         <div className="mt-12 text-center md:hidden">
           <Link

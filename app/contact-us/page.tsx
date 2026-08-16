@@ -1,8 +1,6 @@
-import { Mail, MapPin, Phone, Clock, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
+import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
     title: "Contact Us | ActiveWell Pharma",
@@ -35,7 +33,7 @@ export default function ContactUsPage() {
             <section className="bg-background py-20 lg:py-32">
                 <div className="container-brand mx-auto px-6">
                     <div className="grid lg:grid-cols-12 gap-16 lg:gap-24 items-start">
-                        
+
                         {/* Left: Contact Info */}
                         <div className="lg:col-span-5 space-y-12">
                             <div>
@@ -111,44 +109,7 @@ export default function ContactUsPage() {
                         {/* Right: Contact Form */}
                         <div className="lg:col-span-7">
                             <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-border">
-                                <form className="space-y-8">
-                                    <div className="grid sm:grid-cols-2 gap-8">
-                                        <div className="space-y-3">
-                                            <Label htmlFor="firstName" className="text-sm font-medium text-foreground">First Name</Label>
-                                            <Input id="firstName" placeholder="John" className="bg-gray-50/50 border-gray-200 focus-visible:ring-primary/20 h-12" required />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <Label htmlFor="lastName" className="text-sm font-medium text-foreground">Last Name</Label>
-                                            <Input id="lastName" placeholder="Doe" className="bg-gray-50/50 border-gray-200 focus-visible:ring-primary/20 h-12" required />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <Label htmlFor="email" className="text-sm font-medium text-foreground">Email Address</Label>
-                                        <Input id="email" type="email" placeholder="john@example.com" className="bg-gray-50/50 border-gray-200 focus-visible:ring-primary/20 h-12" required />
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <Label htmlFor="subject" className="text-sm font-medium text-foreground">Subject</Label>
-                                        <Input id="subject" placeholder="How can we help?" className="bg-gray-50/50 border-gray-200 focus-visible:ring-primary/20 h-12" required />
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <Label htmlFor="message" className="text-sm font-medium text-foreground">Message</Label>
-                                        <textarea 
-                                            id="message" 
-                                            placeholder="Write your message here..." 
-                                            rows={5}
-                                            className="flex w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                                            required
-                                        />
-                                    </div>
-
-                                    <Button type="button" className="w-full h-12 text-base font-semibold group rounded-full">
-                                        Send Message
-                                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                    </Button>
-                                </form>
+                                <ContactForm />
                             </div>
                         </div>
 
