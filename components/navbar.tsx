@@ -6,6 +6,7 @@ import { UserNav } from './user-nav'
 import Link from 'next/link'
 import { useCart } from '@/app/context/cart-context'
 import { AnnouncementBar } from './announcement-bar'
+import Image from 'next/image'
 
 const NAV_LINKS = [
 
@@ -33,7 +34,12 @@ export const Navbar = (): React.JSX.Element => {
           className="font-bold text-xl sm:text-2xl text-primary tracking-tight shrink-0"
           aria-label="ActiveWell Pharma — Home"
         >
-          ActiveWell<span className="text-secondary">Pharma</span>
+          <Image
+            src={'/logo.png'}
+            width={200}
+            height={70}
+            alt='Logo'
+          />
         </Link>
 
         {/* Desktop nav links */}

@@ -1,6 +1,7 @@
 import { Instagram, Facebook, Twitter, Youtube, MapPin, Mail, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const SOCIAL_LINKS = [
   { name: 'Instagram', href: 'https://www.instagram.com/activewellpharma/', icon: Instagram },
@@ -94,7 +95,12 @@ export default function Footer(): React.JSX.Element {
               className="inline-block font-extrabold text-2xl text-white mb-5 tracking-tight"
               aria-label="ActiveWell Pharma — Home"
             >
-              ActiveWell<span className="text-secondary">Pharma</span>
+              <Image
+                src={'/logo-invert.png'}
+                width={200}
+                height={70}
+                alt='Logo'
+              />
             </Link>
             <p className="text-[15px] text-white/60 leading-relaxed mb-8 max-w-[280px]">
               Premium plant-based wellness, crafted for everyday life. Clean, effective, and backed by science.
