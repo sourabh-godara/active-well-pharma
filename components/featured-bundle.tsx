@@ -91,7 +91,6 @@ export default function FeaturedBundle(): React.JSX.Element {
                 <div>
                   <div className="flex items-baseline gap-2.5">
                     <span className="text-3xl font-extrabold text-foreground tracking-tight">₹558</span>
-                    <span className="text-lg text-muted-foreground line-through decoration-muted-foreground/30">₹668</span>
                   </div>
                   <p className="text-[13px] text-primary font-bold mt-1 tracking-wide uppercase">Get Free Shipping</p>
                 </div>
