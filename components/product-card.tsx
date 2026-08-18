@@ -22,9 +22,6 @@ const BENEFIT_TEXT = 'Supports Daily Wellness'
 export function ProductCard({ product }: ProductCardProps): React.JSX.Element {
   const [wishlisted, setWishlisted] = useState(false)
 
-  const originalPrice = product.price + 300
-  const savings = originalPrice - product.price
-  const discountPct = 15
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -60,14 +57,6 @@ export function ProductCard({ product }: ProductCardProps): React.JSX.Element {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           unoptimized
         />
-
-        {/* Discount badge — top left */}
-        <div
-          className="absolute top-4 left-4 px-2.5 py-1 bg-accent text-white text-[10px] font-bold rounded uppercase tracking-[0.1em] shadow-sm"
-          aria-label={`${discountPct}% off`}
-        >
-          -{discountPct}%
-        </div>
 
         {/* Wishlist button — top right, always visible */}
         <button

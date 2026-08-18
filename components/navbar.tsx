@@ -29,17 +29,8 @@ export const Navbar = (): React.JSX.Element => {
         aria-label="Main navigation"
       >
         {/* Logo */}
-        <Link
-          href="/"
-          className="font-bold text-xl sm:text-2xl text-primary tracking-tight shrink-0"
-          aria-label="ActiveWell Pharma — Home"
-        >
-          <Image
-            src={'/logo.png'}
-            width={200}
-            height={70}
-            alt='Logo'
-          />
+        <Link href="/" className="font-display text-xl sm:text-2xl font-bold text-primary tracking-tight">
+          ActiveWell<span className="text-secondary"> Pharma</span>
         </Link>
 
         {/* Desktop nav links */}
