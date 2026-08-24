@@ -13,6 +13,10 @@ export async function updateOrderStatus(orderId: string, status: string, oldStat
 
     // Get current user to log who made the change
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("Unauthorized")
+    
+    const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin') throw new Error("Forbidden")
 
     // 1. Update order status
     const { error: updateError } = await supabaseAdmin

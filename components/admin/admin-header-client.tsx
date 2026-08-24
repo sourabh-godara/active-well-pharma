@@ -37,22 +37,20 @@ export function AdminHeaderClient({ fullName, initials }: AdminHeaderClientProps
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Notification bell */}
-                <Button variant="ghost" size="icon" className="text-muted-foreground">
-                    <Bell className="h-5 w-5" />
-                    <span className="sr-only">Notifications</span>
-                </Button>
 
                 {/* User dropdown */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="flex items-center gap-2 px-2">
-                            <Avatar className="h-8 w-8">
-                                <AvatarFallback className="bg-indigo-100 text-indigo-600 text-xs font-semibold">
+                        <Button variant="ghost" className="flex items-center gap-2.5 px-2 h-auto py-1">
+                            <Avatar className="h-9 w-9">
+                                <AvatarFallback className="bg-indigo-50 text-indigo-600 text-sm font-semibold">
                                     {initials}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="hidden sm:block text-sm font-medium text-gray-900">{fullName}</span>
+                            <div className="hidden sm:flex sm:flex-col sm:items-start sm:gap-0.5 text-left">
+                                <span className="text-sm font-semibold text-gray-900 leading-none">{fullName}</span>
+                                <span className="text-xs font-medium text-gray-500 leading-none">Administrator</span>
+                            </div>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
@@ -60,11 +58,8 @@ export function AdminHeaderClient({ fullName, initials }: AdminHeaderClientProps
                             Signed in as
                         </DropdownMenuLabel>
                         <DropdownMenuLabel className="pt-0">{fullName}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="gap-2 cursor-pointer">
-                            <Settings className="h-4 w-4" />
-                            Settings
-                        </DropdownMenuItem>
+
+
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"

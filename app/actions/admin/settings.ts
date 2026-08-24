@@ -49,12 +49,17 @@ export async function updateStoreSettings(settings: StoreSettings): Promise<Acti
             throw new AuthenticationError('You must be logged in')
         }
 
+        const adminClient = createAdminClient()
+
+        const { data: profile } = await adminClient.from('profiles').select('role').eq('id', user.id).single()
+        if (profile?.role !== 'admin') {
+            throw new AuthenticationError('Unauthorized: Admin only')
+        }
+
         // Validate numbers
         if (settings.shipping_charge < 0 || settings.free_shipping_threshold < 0) {
             throw new Error('Values cannot be negative')
         }
-
-        const adminClient = createAdminClient()
         
         const { error } = await adminClient
             .from('store_settings')

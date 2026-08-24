@@ -1,16 +1,4 @@
 
-export type Banner = {
-    id: string
-    title: string
-    subtitle: string | null
-    cta_text: string | null
-    cta_link: string | null
-    image_url: string
-    order_index: number
-    is_active: boolean
-    created_at: string
-    updated_at: string
-}
 
 export type Promotion = {
     id: string

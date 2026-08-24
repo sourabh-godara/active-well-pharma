@@ -24,6 +24,8 @@ export default async function AdminOrdersPage(props: { searchParams: Promise<{ [
             created_at,
             razorpay_order_id,
             discount_amount,
+            guest_email,
+            guest_phone,
             order_items (
                 id,
                 product_id,
@@ -68,7 +70,7 @@ export default async function AdminOrdersPage(props: { searchParams: Promise<{ [
     if (userIds.length > 0) {
         const { data: profiles } = await supabaseAdmin
             .from('profiles')
-            .select('id, full_name, email')
+            .select('id, full_name, email, phone')
             .in('id', userIds)
             
         if (profiles) {
@@ -93,7 +95,7 @@ export default async function AdminOrdersPage(props: { searchParams: Promise<{ [
     }
 
     return (
-        <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-8">
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
             <div className="sm:flex sm:items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Orders Management</h1>

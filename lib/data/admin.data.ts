@@ -1,7 +1,7 @@
 // lib/data/admin.data.ts
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { Banner, Promotion } from '@/types'
+import type { Promotion } from '@/types'
 
 // ─── Internal type definitions ────────────────────────────────────────────────
 
@@ -66,26 +66,7 @@ export const getAdminProducts = unstable_cache(
     { tags: ['products'], revalidate: 60 }
 )
 
-/**
- * All banners for admin list. 60s cache, tagged 'banners'.
- */
-export const getAdminBanners = unstable_cache(
-    async (): Promise<Banner[]> => {
-        const supabase = createAdminClient()
-        const { data, error } = await supabase
-            .from('banners')
-            .select('*')
-            .order('order_index', { ascending: true })
 
-        if (error) {
-            console.error('[getAdminBanners] error:', error)
-            return []
-        }
-        return (data ?? []) as Banner[]
-    },
-    ['admin-banners'],
-    { tags: ['banners'], revalidate: 60 }
-)
 
 /**
  * All promotions for admin list. 60s cache, tagged 'promotions'.

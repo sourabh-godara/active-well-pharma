@@ -1,6 +1,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
 import OrderList from './order-list'
 
@@ -9,6 +10,10 @@ export default async function DashboardPage() {
     const supabase = createClient(cookieStore)
 
     const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return redirect('/auth/login?redirect=/orders')
+    }
 
     const { data: orders } = await supabase
         .from('orders')

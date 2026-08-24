@@ -17,7 +17,7 @@ function StatCardSkeleton() {
 
 export default function AdminDashboardLoading() {
     return (
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="space-y-6">
             {/* Page title */}
             <div className="space-y-1">
                 <div className="h-7 w-32 bg-muted rounded-full animate-pulse" />

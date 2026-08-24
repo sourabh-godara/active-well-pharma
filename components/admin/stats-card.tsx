@@ -1,27 +1,39 @@
-import { LucideIcon } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowUpRight, LucideIcon } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 interface StatsCardProps {
     title: string
     value: string | number
     icon: LucideIcon
     description?: string
+    trendText?: string
+    iconClassName?: string
 }
 
-export function StatsCard({ title, value, icon: Icon, description }: StatsCardProps) {
+export function StatsCard({ title, value, icon: Icon, description, trendText, iconClassName }: StatsCardProps) {
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-                <div className="rounded-md bg-indigo-50 p-2">
-                    <Icon className="h-4 w-4 text-indigo-600" />
+        <Card className="shadow-none border border-gray-100 rounded-2xl overflow-hidden">
+            <CardContent className="p-5 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                    <div className={cn("flex h-10 w-10 items-center justify-center rounded-full", iconClassName || "bg-gray-50 text-gray-600")}>
+                        <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-600">{title}</span>
                 </div>
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-bold tracking-tight text-foreground">{value}</div>
-                {description && (
-                    <p className="text-xs text-muted-foreground mt-1">{description}</p>
-                )}
+                <div>
+                    <div className="text-2xl font-bold tracking-tight text-gray-900">{value}</div>
+                    <div className="mt-2 flex items-center h-4">
+                        {trendText ? (
+                            <div className="flex items-center text-xs font-medium text-green-600">
+                                {trendText}
+                                <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                            </div>
+                        ) : description ? (
+                            <div className="text-xs text-gray-500">{description}</div>
+                        ) : null}
+                    </div>
+                </div>
             </CardContent>
         </Card>
     )

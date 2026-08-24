@@ -17,8 +17,8 @@ export async function updateGuestContact(orderId: string, updates: { guest_email
   }
 
   // Admin Check
-  const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single()
-  if (roleData?.role !== 'admin') {
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') {
     return { success: false, error: 'Unauthorized: Admin only' }
   }
 

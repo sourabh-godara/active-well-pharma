@@ -141,7 +141,7 @@ export default function ProductForm({ product }: ProductFormProps) {
     )
 
     return (
-        <form action={wrappedAction} className="max-w-4xl mx-auto pb-12">
+        <form action={wrappedAction} className="pb-12">
             {/* Hidden fields */}
             {product && <input type="hidden" name="id" value={product.id} />}
             <input type="hidden" name="benefits" value={JSON.stringify(benefits.map(b => b.text))} />
@@ -344,7 +344,7 @@ export default function ProductForm({ product }: ProductFormProps) {
             </div>
 
             {/* ── Sticky Footer Actions ── */}
-            <div className="fixed bottom-0 left-0 right-0 sm:left-64 z-10 bg-white/80 backdrop-blur-md border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div className="fixed bottom-0 left-0 right-0 lg:left-64 z-10 bg-white/80 backdrop-blur-md border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 <a href="/admin/products"
                     className="text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2 transition-colors">
                     Cancel

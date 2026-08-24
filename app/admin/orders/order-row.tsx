@@ -5,7 +5,7 @@ import { updateOrderStatus, getOrderDetails } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { ChevronDown, MapPin, Package, AlertTriangle, CreditCard, Activity, CheckCircle, XCircle, Info, RotateCcw, MoreHorizontal } from 'lucide-react'
+import { ChevronDown, MapPin, Package, AlertTriangle, CreditCard, Activity, CheckCircle, XCircle, Info, RotateCcw, MoreHorizontal, Mail, Phone } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -192,15 +192,39 @@ export default function OrderRow({ order, isNeedsAttention }: { order: any, isNe
                                             <span className="font-mono text-xs">{order.razorpay_order_id || '—'}</span>
                                         </div>
                                         <div className="pt-2">
-                                            <p className="font-semibold text-slate-900 mb-1">Customer Info</p>
-                                            <p className="text-slate-600">{order.profiles?.full_name || 'Unknown'}</p>
-                                            <p className="text-slate-500 text-xs">{order.profiles?.email}</p>
+                                            <p className="font-semibold text-slate-900 mb-1">Customer</p>
+                                            <p className="text-slate-600">{order.profiles?.full_name || addr?.name || 'Guest'}</p>
                                         </div>
+
+                                        {/* Contact Info */}
+                                        <div className="pt-2 border-t border-slate-100">
+                                            <p className="font-semibold text-slate-900 mb-2">Contact Info</p>
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-2 text-slate-600">
+                                                    <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                                    <span className="text-xs">
+                                                        {order.profiles?.email || order.guest_email || addr?.email || '—'}
+                                                    </span>
+                                                    {!order.profiles?.email && (order.guest_email || addr?.email) ? (
+                                                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-amber-50 text-amber-600 border-amber-200">Guest</Badge>
+                                                    ) : null}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-slate-600">
+                                                    <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                                    <span className="text-xs">
+                                                        {order.profiles?.phone || order.guest_phone || addr?.phone || '—'}
+                                                    </span>
+                                                    {addr?.alt_phone ? (
+                                                        <span className="text-[10px] text-slate-400">(Alt: {addr.alt_phone})</span>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         {addr && (
-                                            <div className="pt-2">
+                                            <div className="pt-2 border-t border-slate-100">
                                                 <p className="font-semibold text-slate-900 mb-1">Shipping Address</p>
                                                 <p className="text-slate-600 text-xs leading-relaxed">{formatAddr(addr)}</p>
-                                                <p className="text-slate-500 text-xs mt-1">📞 {addr.phone}</p>
                                             </div>
                                         )}
                                     </div>

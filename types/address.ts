@@ -7,6 +7,7 @@ export type Address = {
     user_id: string
     name: string
     phone: string
+    email?: string | null
     pincode: string
     locality: string
     address_line: string

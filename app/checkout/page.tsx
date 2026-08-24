@@ -43,9 +43,16 @@ interface VerifyPaymentResponse {
 // ── Component ────────────────────────────────────────────────
 
 function CheckoutInner(): React.ReactElement {
-    const { items, clearCart } = useCart()
+    const { items, clearCart, isLoaded } = useCart()
     const router = useRouter()
     const params = useSearchParams()
+
+    useEffect(() => {
+        if (isLoaded && items.length === 0) {
+            toast.info('Your cart is empty')
+            router.replace('/shop')
+        }
+    }, [isLoaded, items.length, router])
     const [isProcessing, setIsProcessing] = useState(false)
     const [isVerifying, setIsVerifying] = useState(false)
     const [addresses, setAddresses] = useState<Address[]>([])

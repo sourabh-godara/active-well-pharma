@@ -175,8 +175,8 @@ DECLARE
     v_phone text;
 BEGIN
   -- 1. Insert profile
-  INSERT INTO public.profiles (id, full_name, role)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', 'user');
+  INSERT INTO public.profiles (id, full_name, email, role)
+  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.email, 'user');
 
   -- 2. Automatically link guest orders by email
   -- Try to find the most recent guest order with a verified phone to auto-verify profile

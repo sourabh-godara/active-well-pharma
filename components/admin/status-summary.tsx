@@ -13,12 +13,12 @@ export function StatusSummary({ shippedCount, totalCount }: StatusSummaryProps) 
     const completedPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
     return (
-        <Card className="h-full">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">Status Summary</CardTitle>
-                <p className="text-xs text-muted-foreground">Order fulfillment breakdown</p>
+        <Card className="h-full shadow-none border border-gray-100 rounded-2xl overflow-hidden">
+            <CardHeader className="pb-6">
+                <CardTitle className="text-sm font-semibold text-gray-900">Status Summary</CardTitle>
+                <p className="text-xs text-gray-500">Order fulfillment breakdown</p>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-6">
                 {/* Shipped */}
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">

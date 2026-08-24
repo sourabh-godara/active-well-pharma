@@ -9,6 +9,7 @@ import {
     handleError,
     DatabaseError,
     ValidationError,
+    AuthenticationError,
     ErrorCode,
     validateWithSchema,
     type ActionResponse,
@@ -78,6 +79,12 @@ export async function createProduct(prevState: any, formData: FormData): Promise
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)
         const adminSupabase = createAdminClient()
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new AuthenticationError('Unauthorized')
+        
+        const { data: profile } = await adminSupabase.from('profiles').select('role').eq('id', user.id).single()
+        if (profile?.role !== 'admin') throw new AuthenticationError('Forbidden')
 
         // Extract and validate basic fields
         const rawData = {
@@ -175,6 +182,13 @@ export async function deleteProduct(productId: string): Promise<ActionResponse> 
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)
 
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new AuthenticationError('Unauthorized')
+        
+        const adminSupabase = createAdminClient()
+        const { data: profile } = await adminSupabase.from('profiles').select('role').eq('id', user.id).single()
+        if (profile?.role !== 'admin') throw new AuthenticationError('Forbidden')
+
         const { data: product, error: fetchError } = await supabase
             .from('products')
             .select('image_url')
@@ -236,6 +250,12 @@ export async function updateProduct(prevState: any, formData: FormData): Promise
         const cookieStore = await cookies()
         const supabase = createClient(cookieStore)
         const adminSupabase = createAdminClient()
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new AuthenticationError('Unauthorized')
+        
+        const { data: profile } = await adminSupabase.from('profiles').select('role').eq('id', user.id).single()
+        if (profile?.role !== 'admin') throw new AuthenticationError('Forbidden')
 
         const id = formData.get('id') as string
 

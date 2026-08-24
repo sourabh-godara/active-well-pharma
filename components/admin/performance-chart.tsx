@@ -3,6 +3,7 @@
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
+import { ChevronDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 interface PerformanceChartProps {
@@ -11,10 +12,16 @@ interface PerformanceChartProps {
 
 export function PerformanceChart({ data }: PerformanceChartProps) {
     return (
-        <Card className="h-full">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Revenue Overview</CardTitle>
-                <CardDescription>Revenue trend over the last 7 data points</CardDescription>
+        <Card className="h-full shadow-none border border-gray-100 rounded-2xl overflow-hidden">
+            <CardHeader className="pb-6 flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle className="text-sm font-semibold text-gray-900">Revenue Overview</CardTitle>
+                    <CardDescription className="text-gray-500">Revenue trend over the last 7 days</CardDescription>
+                </div>
+                <div className="flex items-center gap-2 border border-gray-200 rounded-md px-3 py-1.5 text-xs font-medium text-gray-600 bg-white">
+                    Last 7 days
+                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                </div>
             </CardHeader>
             <CardContent>
                 {!data || data.length === 0 ? (
@@ -30,8 +37,8 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
                             <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -49,7 +56,7 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
                                     }}
                                     formatter={(v) => v !== undefined ? [`₹${Number(v).toFixed(2)}`, 'Revenue'] : ['—', 'Revenue']}
                                 />
-                                <Area type="monotone" dataKey="value" stroke="#4f46e5"
+                                <Area type="monotone" dataKey="value" stroke="#22c55e"
                                     strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
                             </AreaChart>
                         </ResponsiveContainer>

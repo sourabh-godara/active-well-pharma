@@ -54,8 +54,10 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         startTransition(async () => {
-            // Strip email out of address form data for DB
-            const { email, ...addressData } = form;
+            // For guests, keep email in the address data so it persists in DB.
+            // For authenticated users, strip it — their email lives in profiles.
+            const { email, ...addressOnly } = form;
+            const addressData = isGuestCheckout ? { ...addressOnly, email: email || null } : addressOnly;
 
             if (isGuestCheckout) {
                 // Guests save to DB at checkout time now, not here.
