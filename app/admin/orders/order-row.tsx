@@ -5,7 +5,7 @@ import { updateOrderStatus, getOrderDetails } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { ChevronDown, MapPin, Package, AlertTriangle, CreditCard, Activity, CheckCircle, XCircle, Info, RotateCcw, MoreHorizontal, Mail, Phone } from 'lucide-react'
+import { ChevronDown, MapPin, Package, AlertTriangle, CreditCard, Activity, CheckCircle, XCircle, Info, RotateCcw, MoreHorizontal, Mail, Phone, FileText, Printer } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -130,6 +130,22 @@ export default function OrderRow({ order, isNeedsAttention }: { order: any, isNe
                 </td>
                 <td className="py-4 pl-3 pr-4 text-right sm:pr-6">
                     <div className="flex items-center justify-end gap-2">
+                        <a
+                            href={`/api/admin/orders/${order.id}/pdf-invoice`}
+                            target="_blank"
+                            className="inline-flex items-center justify-center rounded-full h-8 w-8 text-slate-500 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-colors"
+                            title="Download Invoice"
+                        >
+                            <FileText className="h-4 w-4" />
+                        </a>
+                        <a
+                            href={`/api/admin/orders/${order.id}/pdf-label`}
+                            target="_blank"
+                            className="inline-flex items-center justify-center rounded-full h-8 w-8 text-slate-500 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-colors"
+                            title="Download Package Label"
+                        >
+                            <Printer className="h-4 w-4" />
+                        </a>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button 

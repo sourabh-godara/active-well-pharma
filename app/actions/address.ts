@@ -21,7 +21,12 @@ export async function getAddresses(): Promise<Address[]> {
         .order('created_at', { ascending: false })
 
     if (error) {
-        console.error('[getAddresses]', error)
+        console.error('[getAddresses]', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+        })
         return []
     }
     return data ?? []

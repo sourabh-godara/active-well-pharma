@@ -32,7 +32,7 @@ export function AdminHeaderClient({ fullName, initials }: AdminHeaderClientProps
         <div className="flex flex-1 items-center justify-between">
             <div className="flex items-center gap-3">
                 <h1 className="text-lg font-semibold text-gray-900 hidden sm:block">
-                    Good to see you, <span className="text-indigo-600">{fullName}</span>
+                    Good to see you, <span className="text-green-700">{fullName}</span>
                 </h1>
             </div>
 

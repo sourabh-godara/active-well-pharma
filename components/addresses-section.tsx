@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Edit2, Trash2, Star, Home, MoreVertical } from 'lucide-react'
+import { Plus, Edit2, Trash2, Star, Home, MoreVertical, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AddressForm } from '@/components/address-form'
@@ -58,12 +58,21 @@ export function AddressesSection({ initialAddresses }: AddressesSectionProps) {
     return (
         <div className="space-y-4">
             {/* Header / Add Button Row */}
-            <div className="flex justify-end mb-4">
+            <div className="flex items-start justify-between mb-6">
+                <div>
+                    <h2 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                            <MapPin className="w-3.5 h-3.5 text-green-700" />
+                        </div>
+                        Address
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1 ml-8">Manage your default address for deliveries</p>
+                </div>
                 {!showForm && !editingAddress && (
                     <Button
                         variant="outline"
                         onClick={() => setShowForm(true)}
-                        className="text-sm text-green-700 font-medium flex items-center gap-1.5 border-green-200 hover:bg-green-50"
+                        className="text-sm text-green-700 font-medium hover:text-green-50 flex items-center gap-1.5 border-green-200 hover:bg-green-700"
                     >
                         <Plus className="h-4 w-4" /> Add New Address
                     </Button>

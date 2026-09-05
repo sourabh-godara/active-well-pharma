@@ -237,17 +237,7 @@ export default function ProfileClient({ profile, addresses }: ProfileClientProps
 
                                 {/* Addresses */}
                                 <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
-                                    <div className="mb-6 flex items-center justify-between">
-                                        <div>
-                                            <h2 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                                                    <MapPin className="w-3.5 h-3.5 text-green-700" />
-                                                </div>
-                                                Address
-                                            </h2>
-                                            <p className="text-sm text-gray-500 mt-1 ml-8">Manage your default address for deliveries</p>
-                                        </div>
-                                    </div>
+
                                     <AddressesSection initialAddresses={addresses} />
                                 </div>
                             </div>

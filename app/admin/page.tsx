@@ -16,32 +16,34 @@ export default async function AdminDashboard() {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
+    const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 86400000).toISOString()
+    const VALID_STATUSES = ['paid', 'confirmed', 'shipped', 'delivered'] as const
+
     const [
         { count: productsCount },
-        { count: ordersCount },
-        { data: revenueData },
-        { data: shippedOrders },
+        { data: revenueData, count: ordersCount },
+        { count: shippedCount },
         { data: recentOrders },
-        { data: allOrders }
+        { data: chartOrders }
     ] = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).in('status', ['paid', 'confirmed', 'shipped', 'delivered']),
-        supabase.from('orders').select('total_amount').in('status', ['paid', 'confirmed', 'shipped', 'delivered']),
-        supabase.from('orders').select('id', { count: 'exact' }).eq('status', 'shipped'),
+        supabase.from('orders').select('total_amount', { count: 'exact' }).in('status', VALID_STATUSES),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'shipped'),
         supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5),
-        supabase.from('orders').select('created_at, total_amount').in('status', ['paid', 'confirmed', 'shipped', 'delivered']).order('created_at', { ascending: true })
+        supabase.from('orders').select('created_at, total_amount').in('status', VALID_STATUSES).gte('created_at', THIRTY_DAYS_AGO).order('created_at', { ascending: true })
     ])
 
     const totalRevenue = revenueData?.reduce((sum, o) => sum + o.total_amount, 0) || 0
 
     const chartDataMap = new Map<string, number>()
-    allOrders?.forEach(order => {
+    chartOrders?.forEach(order => {
         const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         chartDataMap.set(date, (chartDataMap.get(date) || 0) + order.total_amount)
     })
     const chartData = Array.from(chartDataMap.entries())
         .map(([name, value]) => ({ name, value }))
         .slice(-7)
+
 
     // Badge variant helper
     const statusBadge = (status: string) => {
@@ -64,10 +66,6 @@ export default async function AdminDashboard() {
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h2>
                     <p className="text-gray-500 text-sm mt-1">Welcome back! Here's what's happening with your store.</p>
-                </div>
-                <div className="flex items-center gap-2 border border-gray-200 rounded-md px-3 py-2 text-sm font-medium text-gray-600 bg-white">
-                    <CalendarDays className="h-4 w-4 text-gray-400" />
-                    Aug 07, 2026 - Aug 13, 2026
                 </div>
             </div>
 
@@ -96,7 +94,7 @@ export default async function AdminDashboard() {
                 />
                 <StatsCard
                     title="Shipped Orders"
-                    value={shippedOrders?.length ?? 0}
+                    value={shippedCount ?? 0}
                     icon={Package}
                     description="In transit"
                     iconClassName="bg-orange-50 text-orange-600"
@@ -110,7 +108,7 @@ export default async function AdminDashboard() {
                 </div>
                 <div>
                     <StatusSummary
-                        shippedCount={shippedOrders?.length ?? 0}
+                        shippedCount={shippedCount ?? 0}
                         totalCount={ordersCount ?? 0}
                     />
                 </div>

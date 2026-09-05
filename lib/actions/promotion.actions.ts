@@ -2,8 +2,10 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createPublicClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { unstable_cache } from 'next/cache'
 import { checkAdmin } from '@/lib/auth/check-admin'
 
 const STORAGE_BUCKET = 'image-storage'
@@ -184,46 +186,25 @@ export async function togglePromotionStatus(id: string, isActive: boolean) {
     revalidatePath('/')
 }
 
-export async function getActivePromotion() {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+/**
+ * Cached read of the active promotion. No cookies/auth — safe for static pages.
+ * The "has user seen this" check is handled client-side via localStorage.
+ */
+export const getActivePromotion = unstable_cache(
+    async () => {
+        const supabase = createPublicClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
 
-    // Check if user has seen it
-    const { data: { user } } = await supabase.auth.getUser()
-
-    const { data: promo } = await supabase
-        .from('promotions')
-        .select('*')
-        .eq('is_active', true)
-        .single()
-
-    if (!promo) return null
-
-    if (user) {
-        const { data: seen } = await supabase
-            .from('user_promotions')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('promotion_id', promo.id)
+        const { data: promo } = await supabase
+            .from('promotions')
+            .select('*')
+            .eq('is_active', true)
             .single()
 
-        if (seen) return null
-    }
-
-    return promo
-}
-
-export async function markPromotionAsSeen(promotionId: string) {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (user) {
-        await supabase.from('user_promotions').upsert({
-            user_id: user.id,
-            promotion_id: promotionId,
-            seen_at: new Date().toISOString()
-        }, { onConflict: 'user_id, promotion_id' })
-    }
-}
+        return promo ?? null
+    },
+    ['active-promotion'],
+    { tags: ['promotions'], revalidate: 300 }
+)

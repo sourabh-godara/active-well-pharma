@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Promotion } from '@/types'
-import { markPromotionAsSeen } from '@/lib/actions/promotion.actions'
 import { X, Copy, Check, ArrowRight, Leaf } from 'lucide-react'
 
 const COPY_FEEDBACK_DURATION_MS = 2000
@@ -50,11 +49,10 @@ export function PromotionModal({ promotion }: { promotion: Promotion | null }): 
         return () => { cleanup?.() }
     }, [promotion])
 
-    const handleClose = useCallback(async () => {
+    const handleClose = useCallback(() => {
         setIsOpen(false)
         if (promotion) {
             localStorage.setItem(`promo_seen_${promotion.id}`, 'true')
-            await markPromotionAsSeen(promotion.id)
         }
     }, [promotion])
 

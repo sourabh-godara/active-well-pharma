@@ -9,6 +9,7 @@ import { Loader2, MapPin } from 'lucide-react'
 import { saveAddress, updateAddress } from '@/app/actions/address'
 import type { Address, AddressFormData } from '@/types/address'
 import { toast } from 'sonner'
+import { z } from 'zod'
 
 const INDIAN_STATES = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -47,12 +48,49 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
             : defaultForm
     )
     const [isPending, startTransition] = useTransition()
+    const [errors, setErrors] = useState<Record<string, string | undefined>>({})
 
-    const set = (key: keyof (AddressFormData & { email?: string }), val: string | boolean) =>
+    const set = (key: keyof (AddressFormData & { email?: string }), val: string | boolean) => {
         setForm(prev => ({ ...prev, [key]: val }))
+        if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }))
+    }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        
+        const schema = z.object({
+            name: z.string().min(1, 'Full Name is required'),
+            phone: z.string().regex(/^\d{10}$/, 'Phone number must be exactly 10 digits'),
+            pincode: z.string().regex(/^\d{6}$/, 'Pincode must be exactly 6 digits'),
+            locality: z.string().min(1, 'Locality is required'),
+            address_line: z.string().min(1, 'Address is required'),
+            city: z.string().min(1, 'City is required'),
+            state: z.string().min(1, 'State is required'),
+            landmark: z.string().optional(),
+            alt_phone: z.string().regex(/^\d{10}$/, 'Alternate phone must be exactly 10 digits').optional().or(z.literal('')),
+            address_type: z.enum(['Home', 'Work']),
+            is_default: z.boolean(),
+            ...(isGuestCheckout ? { email: z.string().email('Valid email is required') } : {})
+        })
+
+        const result = schema.safeParse(form)
+        if (!result.success) {
+            const formattedErrors = result.error.format()
+            setErrors({
+                name: formattedErrors.name?._errors[0],
+                phone: formattedErrors.phone?._errors[0],
+                email: isGuestCheckout ? (formattedErrors as any).email?._errors[0] : undefined,
+                pincode: formattedErrors.pincode?._errors[0],
+                locality: formattedErrors.locality?._errors[0],
+                address_line: formattedErrors.address_line?._errors[0],
+                city: formattedErrors.city?._errors[0],
+                state: formattedErrors.state?._errors[0],
+                alt_phone: formattedErrors.alt_phone?._errors[0]
+            })
+            return
+        }
+        setErrors({})
+
         startTransition(async () => {
             // For guests, keep email in the address data so it persists in DB.
             // For authenticated users, strip it — their email lives in profiles.
@@ -98,13 +136,15 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
                 <div>
                     <Label className="text-xs text-muted-foreground">Full Name <span className="text-red-500">*</span></Label>
                     <Input required value={form.name} onChange={e => set('name', e.target.value)}
-                        placeholder="Name" className={`${inputCls} mt-1`} />
+                        placeholder="Name" className={`${inputCls} mt-1 ${errors.name ? 'border-red-500' : ''}`} />
+                    {errors.name && <p className="text-[10px] text-red-500 mt-1">{errors.name}</p>}
                 </div>
                 {isGuestCheckout && (
                     <div>
                         <Label className="text-xs text-muted-foreground">Email <span className="text-red-500">*</span></Label>
                         <Input required type="email" value={form.email} onChange={e => set('email', e.target.value)}
-                            placeholder="Email Address" className={`${inputCls} mt-1`} />
+                            placeholder="Email Address" className={`${inputCls} mt-1 ${errors.email ? 'border-red-500' : ''}`} />
+                        {errors.email && <p className="text-[10px] text-red-500 mt-1">{errors.email}</p>}
                     </div>
                 )}
                 <div className={isGuestCheckout ? 'md:col-span-2' : ''}>
@@ -113,8 +153,9 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
                         <Input required value={form.phone}
                             onChange={e => set('phone', e.target.value)}
                             placeholder="10-digit mobile number" maxLength={10}
-                            pattern="[0-9]{10}" className={`${inputCls} flex-1`} />
+                            className={`${inputCls} flex-1 ${errors.phone ? 'border-red-500' : ''}`} />
                     </div>
+                    {errors.phone && <p className="text-[10px] text-red-500 mt-1">{errors.phone}</p>}
                 </div>
             </div>
 
@@ -123,12 +164,14 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
                 <div>
                     <Label className="text-xs text-muted-foreground">Pincode</Label>
                     <Input required value={form.pincode} onChange={e => set('pincode', e.target.value)}
-                        placeholder="Pincode" maxLength={6} pattern="[0-9]{6}" className={`${inputCls} mt-1`} />
+                        placeholder="Pincode" maxLength={6} className={`${inputCls} mt-1 ${errors.pincode ? 'border-red-500' : ''}`} />
+                    {errors.pincode && <p className="text-[10px] text-red-500 mt-1">{errors.pincode}</p>}
                 </div>
                 <div>
                     <Label className="text-xs text-muted-foreground">Locality</Label>
                     <Input required value={form.locality} onChange={e => set('locality', e.target.value)}
-                        placeholder="Locality" className={`${inputCls} mt-1`} />
+                        placeholder="Locality" className={`${inputCls} mt-1 ${errors.locality ? 'border-red-500' : ''}`} />
+                    {errors.locality && <p className="text-[10px] text-red-500 mt-1">{errors.locality}</p>}
                 </div>
             </div>
 
@@ -139,8 +182,9 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
                     onChange={e => set('address_line', e.target.value)}
                     placeholder="Address (Area and Street)"
                     rows={3}
-                    className="mt-1 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className={`mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${errors.address_line ? 'border-red-500' : 'border-gray-200'}`}
                 />
+                {errors.address_line && <p className="text-[10px] text-red-500 mt-1">{errors.address_line}</p>}
             </div>
 
             {/* Row 3: City + State */}
@@ -148,15 +192,17 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
                 <div>
                     <Label className="text-xs text-muted-foreground">City/District/Town</Label>
                     <Input required value={form.city} onChange={e => set('city', e.target.value)}
-                        placeholder="City/District/Town" className={`${inputCls} mt-1`} />
+                        placeholder="City/District/Town" className={`${inputCls} mt-1 ${errors.city ? 'border-red-500' : ''}`} />
+                    {errors.city && <p className="text-[10px] text-red-500 mt-1">{errors.city}</p>}
                 </div>
                 <div>
                     <Label className="text-xs text-muted-foreground">State</Label>
                     <select required value={form.state} onChange={e => set('state', e.target.value)}
-                        className="mt-1 h-10 w-full rounded-md border border-gray-200 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                        className={`mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${errors.state ? 'border-red-500' : 'border-gray-200'}`}>
                         <option value="">--Select State--</option>
                         {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
+                    {errors.state && <p className="text-[10px] text-red-500 mt-1">{errors.state}</p>}
                 </div>
             </div>
 
@@ -170,7 +216,8 @@ export function AddressForm({ onClose, onSuccess, existing, isGuestCheckout, hid
                 <div>
                     <Label className="text-xs text-muted-foreground">Alternate Phone (Optional)</Label>
                     <Input value={form.alt_phone ?? ''} onChange={e => set('alt_phone', e.target.value)}
-                        placeholder="Alternate Phone (Optional)" className={`${inputCls} mt-1`} />
+                        placeholder="Alternate Phone (Optional)" className={`${inputCls} mt-1 ${errors.alt_phone ? 'border-red-500' : ''}`} />
+                    {errors.alt_phone && <p className="text-[10px] text-red-500 mt-1">{errors.alt_phone}</p>}
                 </div>
             </div>
 
