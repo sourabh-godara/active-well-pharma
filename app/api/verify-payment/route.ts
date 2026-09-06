@@ -173,9 +173,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       stockOk: true,
     });
 
-    // Send order confirmation email
+    // Send order confirmation email + admin alert
     const { sendOrderConfirmation } = require('@/lib/email/send-order-confirmation');
-    await sendOrderConfirmation(order.id);
+    const { sendAdminOrderAlert } = require('@/lib/email/send-admin-order-alert');
+    await Promise.all([
+      sendOrderConfirmation(order.id),
+      sendAdminOrderAlert(order.id),
+    ]);
 
     // Trigger SMS for 'confirmed' state
     const { sendOrderUpdate } = require('@/lib/sms/send-order-update');

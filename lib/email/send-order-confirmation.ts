@@ -4,12 +4,19 @@ import { paymentEnv } from '@/lib/env';
 import { logger } from '@/lib/logger';
 
 const resend = new Resend(paymentEnv.RESEND_API_KEY);
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export async function sendOrderConfirmation(orderId: string) {
   const adminClient = createAdminClient();
 
   try {
-    // Fetch order, items, and payment info
     const { data: order, error: orderError } = await adminClient
       .from('orders')
       .select(`
@@ -39,27 +46,29 @@ export async function sendOrderConfirmation(orderId: string) {
     }
 
     const payment = order.payments && order.payments.length > 0 ? order.payments[0] : null;
-    const isCod = payment?.method === 'cod'; // Depending on how COD is marked
+    const isCod = payment?.method === 'cod';
+
+    const safeName = escapeHtml(recipientName || 'Customer');
 
     // Construct the email content
     const itemsHtml = (order.order_items || [])
       .map((item: any) => `
         <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.products?.name || 'Product'}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${escapeHtml(item.products?.name || 'Product')}</td>
           <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.quantity}</td>
           <td style="padding: 8px; border-bottom: 1px solid #ddd;">₹${item.price_at_purchase}</td>
         </tr>
       `)
       .join('');
 
-    const trackingLink = isGuest 
+    const trackingLink = isGuest
       ? `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/track/${order.guest_tracking_token}`
       : `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/orders/${order.id}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Order Confirmation - ActiveWell Pharma</h2>
-        <p>Hi ${recipientName},</p>
+        <p>Hi ${safeName},</p>
         <p>Thank you for your order! Your order <strong>#${order.id.split('-')[0]}</strong> has been confirmed.</p>
         
         <table style="width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px;">
@@ -89,10 +98,9 @@ export async function sendOrderConfirmation(orderId: string) {
       </div>
     `;
 
-    // Note: Resend requires domain verification for sending from custom domains.
-    // If you haven't verified your domain, use a verified domain or fallback to the testing 'onboarding@resend.dev' for sandbox.
+
     const { data, error } = await resend.emails.send({
-      from: 'ActiveWell Pharma <orders@activewellpharma.com>', // MUST BE VERIFIED IN RESEND
+      from: 'ActiveWell Pharma <orders@activewellpharma.com>',
       to: [recipientEmail],
       subject: `Order Confirmed: #${order.id.split('-')[0]}`,
       html,
@@ -106,7 +114,7 @@ export async function sendOrderConfirmation(orderId: string) {
 
   } catch (error: any) {
     logger.error('Failed to send order confirmation email', { orderId, error: error.message });
-    
+
     // Log failure to payment_events
     await adminClient.from('payment_events').insert({
       order_id: orderId,

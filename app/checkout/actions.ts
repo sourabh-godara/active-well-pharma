@@ -259,9 +259,13 @@ export async function placeOrderFree(
         // Successfully placed free order — mark confirmed
         await adminClient.from('orders').update({ status: 'confirmed' }).eq('id', order.id)
 
-        // Send confirmation email
+        // Send confirmation email + admin alert
         const { sendOrderConfirmation } = require('@/lib/email/send-order-confirmation')
-        await sendOrderConfirmation(order.id)
+        const { sendAdminOrderAlert } = require('@/lib/email/send-admin-order-alert')
+        await Promise.all([
+          sendOrderConfirmation(order.id),
+          sendAdminOrderAlert(order.id),
+        ])
 
         return { success: true, data: { orderId: order.id, guestTrackingToken } }
     } catch (error) {

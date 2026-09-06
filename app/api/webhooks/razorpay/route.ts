@@ -190,9 +190,13 @@ async function handlePaymentCaptured(
     });
     
     if (result?.won && result?.stock_ok !== false) {
-      // Send order confirmation email
+      // Send order confirmation email + admin alert
       const { sendOrderConfirmation } = require('@/lib/email/send-order-confirmation');
-      await sendOrderConfirmation(orderId);
+      const { sendAdminOrderAlert } = require('@/lib/email/send-admin-order-alert');
+      await Promise.all([
+        sendOrderConfirmation(orderId),
+        sendAdminOrderAlert(orderId),
+      ]);
       
       // Trigger SMS for 'confirmed' state
       const { sendOrderUpdate } = require('@/lib/sms/send-order-update');
