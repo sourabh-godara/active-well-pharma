@@ -21,7 +21,7 @@ export const revalidate = 60 // Revalidate every 60 seconds
 export const metadata = {
   title: 'ActiveWell Pharma — Premium Plant-Based Wellness',
   description:
-    'Shop clinically-inspired, 100% plant-based supplements for radiant skin, healthy hair, and total wellness. FSSAI approved, GMP certified. Free shipping above ₹599.',
+    'Shop clinically-inspired, 100% plant-based supplements for radiant skin, healthy hair, and total wellness. FSSAI approved, GMP certified.',
 }
 
 export default async function Home(): Promise<React.JSX.Element> {

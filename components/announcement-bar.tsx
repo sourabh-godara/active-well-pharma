@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 
 const MESSAGES = [
-  '🚚 Free shipping on orders above ₹499',
+  '🚚 Free Shipping on All Orders',
   '✨ Use code GLOW20 for 20% off',
   '🔬 Clinically Tested Formulas',
   '🌿 100% Plant-Based Ingredients',
