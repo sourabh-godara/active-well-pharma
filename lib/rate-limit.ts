@@ -78,3 +78,11 @@ export function getRateLimiter(): RateLimiter {
   }
   return instance;
 }
+
+/**
+ * Create a rate limiter with custom settings.
+ * Use for flows that need different limits than the default (e.g. password reset).
+ */
+export function createRateLimiter(maxRequests: number, windowMs: number): RateLimiter {
+  return new InMemoryRateLimiter(maxRequests, windowMs);
+}

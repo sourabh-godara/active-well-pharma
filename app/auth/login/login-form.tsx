@@ -59,13 +59,12 @@ export default function LoginForm() {
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                         <Label htmlFor="password" className="font-body font-medium text-foreground">Password</Label>
-                        <button
-                            type="button"
-                            onClick={() => toast.info('Forgot password coming soon!')}
+                        <Link
+                            href="/auth/forgot-password"
                             className="text-sm font-body font-medium text-secondary hover:text-secondary/80 transition-colors"
                         >
                             Forgot Password?
-                        </button>
+                        </Link>
                     </div>
                     <div className="relative">
                         <Input

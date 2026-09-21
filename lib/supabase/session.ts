@@ -54,7 +54,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
         : {}
 
     const { pathname } = request.nextUrl
-    const isAuthPage = pathname.startsWith('/auth/login') || pathname.startsWith('/auth/signup')
+    const isAuthPage = pathname.startsWith('/auth/login') || pathname.startsWith('/auth/signup') || pathname.startsWith('/auth/forgot-password')
+    const isResetPasswordPage = pathname.startsWith('/auth/reset-password') || pathname.startsWith('/auth/callback')
     const isAdminPage = pathname.startsWith('/admin')
     const isDashboardPage = pathname.startsWith('/dashboard')
 
