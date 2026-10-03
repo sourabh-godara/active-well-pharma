@@ -6,6 +6,7 @@ import Categories from '@/components/categories'
 import BestSellers from '@/components/best-sellers'
 import FeaturedCollections from '@/components/featured-collections'
 import FeaturedBundle from '@/components/featured-bundle'
+import ComingSoonProducts from '@/components/coming-soon-products'
 import Benefits from '@/components/benefits'
 import HowItWorks from '@/components/how-it-works'
 import ScienceCertifications from '@/components/science-certifications'
@@ -43,6 +44,8 @@ export default async function Home(): Promise<React.JSX.Element> {
 
       {/* Async server component — fetches own data */}
       <BestSellers />
+
+      <ComingSoonProducts />
 
       {/*      <FeaturedCollections /> */}
 
